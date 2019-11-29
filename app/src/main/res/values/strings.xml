@@ -3,4 +3,5 @@
     <string name="drone">Drone</string>
     <string name="controller">Controller</string>
     <string name="Continue">Continue</string>
+    <string name="confirm">Confirm</string>
 </resources>

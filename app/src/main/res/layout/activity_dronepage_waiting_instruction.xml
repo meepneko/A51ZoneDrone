@@ -2,27 +2,28 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/linearLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".dronepage_waiting_instruction">
 
     <Button
-        android:id="@+id/Button_Confirm"
-        android:layout_width="249dp"
-        android:layout_height="53dp"
-        android:layout_marginTop="220dp"
-        android:text="@string/confirm"
+        android:id="@+id/button"
+        android:layout_width="229dp"
+        android:layout_height="43dp"
+        android:text="Confirm"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.907" />
+        app:layout_constraintVertical_bias="0.915" />
 
     <ScrollView
-        android:id="@+id/ScrollView1"
-        android:layout_width="294dp"
-        android:layout_height="106dp"
-        android:layout_marginTop="108dp"
+        android:id="@+id/SensScrollVIew"
+        android:layout_width="359dp"
+        android:layout_height="377dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -30,7 +31,14 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/sensor_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(Place Holder)" />
+        </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
