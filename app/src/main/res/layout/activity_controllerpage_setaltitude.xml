@@ -6,23 +6,59 @@
     android:layout_height="match_parent"
     tools:context=".controllerpage_setaltitude">
 
-    <Button
-        android:id="@+id/btnConnect"
-        android:layout_width="130dp"
-        android:layout_height="43dp"
-        android:layout_marginTop="124dp"
-        android:layout_marginEnd="32dp"
-        android:text="Connect"
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="351dp"
+        android:layout_height="485dp"
+        android:foreground="@drawable/a"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintHorizontal_bias="0.516"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.186" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="355dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="212dp"
+        android:background="#CDDC39"
+        android:clickable="false"
+        android:max="500"
+        android:progressBackgroundTint="#009688"
+        android:rotation="270"
+        android:splitTrack="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.98"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.416" />
 
     <TextView
-        android:id="@+id/txtConnectWifi"
+        android:id="@+id/Altitude_textView"
+        android:layout_width="154dp"
+        android:layout_height="40dp"
+        android:layout_marginBottom="128dp"
+        android:background="#2196F3"
+        android:drawableTint="#CDDC39"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:layout_constraintVertical_bias="0.714" />
+
+    <Button
+        android:id="@+id/button_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="136dp"
-        android:layout_marginEnd="40dp"
-        android:text="Connect to a Wi-Fi network"
-        app:layout_constraintEnd_toStartOf="@+id/btnConnect"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_marginBottom="48dp"
+        android:clickable="false"
+        android:text="Next"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.908"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         controlBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent startIntent= new Intent(getApplicationContext(),dronepage_waiting_instruction.class);
+                Intent startIntent= new Intent(getApplicationContext(),controllerpage_waypoint.class);
                 startActivity(startIntent);
             }
         });
