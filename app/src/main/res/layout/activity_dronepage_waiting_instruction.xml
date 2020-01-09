@@ -7,10 +7,10 @@
     tools:context=".dronepage_waiting_instruction">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/btnConfirm"
         android:layout_width="229dp"
         android:layout_height="43dp"
-        android:text="Confirm"
+        android:text="@string/txtConfirm"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,7 +22,7 @@
         android:layout_width="359dp"
         android:layout_height="377dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="100dp"
         android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -37,7 +37,8 @@
                 android:id="@+id/sensor_list"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="(Place Holder)" />
+                android:layout_gravity="center"
+                android:text="@string/place_holder" />
         </LinearLayout>
     </ScrollView>
 

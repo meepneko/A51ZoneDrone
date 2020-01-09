@@ -4,4 +4,6 @@
     <string name="controller">Controller</string>
     <string name="Continue">Continue</string>
     <string name="confirm">Confirm</string>
+    <string name="txtConfirm">Confirm</string>
+    <string name="place_holder">(Place Holder)</string>
 </resources>
