@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">A51ZoneDrone_App</string>
+    <string name="app_name">A51 Zone Drone</string>
     <string name="drone">Drone</string>
     <string name="controller">Controller</string>
     <string name="Continue">Continue</string>
@@ -7,4 +7,5 @@
     <string name="title_activity_controllerpage_waypoint">Map</string>
     <string name="txtConfirm">Confirm</string>
     <string name="place_holder">(Place Holder)</string>
+    <string name="txtdrone_on_flight">Drone on flight... Charowt.</string>
 </resources>
