@@ -3,13 +3,17 @@ package com.example.a51zonedrone_app;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
+import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 
 import android.Manifest;
@@ -24,6 +28,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -41,6 +46,7 @@ public class controllerpage_waypoint extends FragmentActivity implements OnMapRe
 
     private GoogleMap mMap;
     Location currentLocation;
+    private double longitude, latitude;
     FusedLocationProviderClient fusedLocationProviderClient;
     private static final int REQUEST_CODE = 101;
 
@@ -68,6 +74,8 @@ public class controllerpage_waypoint extends FragmentActivity implements OnMapRe
             public void onSuccess(Location location) {
                 if (location != null) {
                     currentLocation = location;
+                    longitude = location.getLongitude();
+                    latitude = location.getLatitude();
                     Toast.makeText(getApplicationContext(), currentLocation.getLatitude() + "" + currentLocation.getLongitude(), Toast.LENGTH_SHORT).show();
                     SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
                     assert supportMapFragment != null;
@@ -214,16 +222,33 @@ public class controllerpage_waypoint extends FragmentActivity implements OnMapRe
             }
         });
         //LatLng cebuLocation = new LatLng(10.2956, 123.8805);
-        LatLng latLng = new LatLng(10.2956, 123.8805);
-        //LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+        //LatLng latLng = new LatLng(10.2956, 123.8805);
+
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = map.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            this, R.raw.map_style));
+
+            if (!success) {
+                Log.e("SUC", "Style parsing failed.");
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.e("ERR", "Can't find style. Error: ", e);
+        }
+
+        LatLng latLng = new LatLng(latitude, longitude);
         mMap.setMinZoomPreference(14.0f);
         mMap.setMaxZoomPreference(100.0f);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        /*
+
+        //BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromResource(R.drawable.drone2);
+        //MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("I am here!").icon(bitmapDescriptorFactory);
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("I am here!");
         map.animateCamera(CameraUpdateFactory.newLatLng(latLng));
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5));
-        map.addMarker(markerOptions);*/
+        map.addMarker(markerOptions);
     }
 
     @Override
