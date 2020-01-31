@@ -53,7 +53,7 @@ public class dronepage_compability extends AppCompatActivity {
             sensorText.append("No Accelerometer found").append(System.getProperty("line.separator"));
         }
 
-        //GPS
+        //Magnetometer
         if (sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null){
             // Success!
             checkMA = true;

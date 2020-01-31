@@ -8,4 +8,8 @@
     <string name="txtConfirm">Confirm</string>
     <string name="place_holder">(Place Holder)</string>
     <string name="txtdrone_on_flight">Drone on flight... Charowt.</string>
+    <string name="start">START</string>
+    <string name="stop">Abort Mission!!!</string>
+    <string name="location_updated_message" />
+    <string name="img_location" />
 </resources>
