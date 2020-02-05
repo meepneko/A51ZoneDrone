@@ -71,6 +71,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
     //The Map
     private GoogleMap mMap;
     private double latitude, longitude;
+    private LatLng loc;
 
     //GoogleApiClient
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -89,13 +90,14 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
     private boolean firstTimeFlag = true;
     private boolean bttn = false;
     private int index = 0;
-    int count = 0;
+    private int count = 0;
     private List<LatLng> directionPoint = new ArrayList<>();
+    private AsyncTask<?, ?, ?> runningTask;
 
     //Marker
-    BitmapDescriptor bm;
-    MarkerOptions marker = new MarkerOptions();
-    Marker myMarker;
+    private BitmapDescriptor bm;
+    private List<MarkerOptions> marker = new ArrayList<>();
+    private Marker myMarker;
 
     //Routes
     PolylineOptions rectLine = new PolylineOptions();
@@ -105,22 +107,26 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
             animateCamera(currentLocation);
     };
 
-
+    //Method for getting the location live
     private final LocationCallback mLocationCallback = new LocationCallback() {
 
         @Override
         public void onLocationResult(LocationResult locationResult) {
             super.onLocationResult(locationResult);
+
             if (locationResult.getLastLocation() == null)
                 return;
             currentLocation = locationResult.getLastLocation();
-            if (firstTimeFlag && mMap != null) {
-                latitude = currentLocation.getLatitude();
-                longitude = currentLocation.getLongitude();
+            for(Location loc : locationResult.getLocations()){
+                if (firstTimeFlag && mMap != null) {
+                    latitude = loc.getLatitude();
+                    longitude = loc.getLongitude();
+                    textView.setText(latitude + ", " + longitude);
 
-                animateCamera(currentLocation);
-                UpdateUI();
-                firstTimeFlag = false;
+                    animateCamera(currentLocation);
+                    UpdateUI();
+                    firstTimeFlag = false;
+                }
             }
 
             showMarker(currentLocation);
@@ -137,14 +143,13 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
         startBtn = (Button) findViewById(R.id.startBtn);
         textView = (TextView)findViewById(R.id.txt_LatLong);
 
-        textView.setText("NOT STARTED");
+        textView.setText("");
 
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.mMap = googleMap;
-        //mMap.setMyLocationEnabled(true);
 
         try {
             // Customise the styling of the base map using a JSON object defined
@@ -160,36 +165,42 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
             Log.e("ERR", "Can't find style. Error: ", e);
         }
 
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng point) {
-                LatLong latlong = new LatLong(point);
-                LatLng lat = new LatLng(point.latitude, point.longitude);
-                double distance = convert(latitude, longitude, point.latitude, point.longitude);
-                if(bttn == false){
-                    if(distance > radius){
-                        Toast.makeText(getApplicationContext(), "Warning! Drone will be out of range.", Toast.LENGTH_SHORT).show();
-                    }
-                    else {
-                        // create marker
-                        allPoints.add(latlong);
-                        allPoints.get(index).setLatlng(lat);
-                        bm = BitmapDescriptorFactory.fromResource(R.drawable.uncheck_marker);
-                        marker = new MarkerOptions().position(point).title(count + "").draggable(true).icon(bm);
-                        CircleOptions circle = new CircleOptions().center(point).radius(rad)
-                                .strokeWidth(3)
-                                .strokeColor(getResources().getColor(R.color.colorRad))
-                                .fillColor(getResources().getColor(R.color.colorRad));
-                        count++;
-                        index++;
-                        myMarker = mMap.addMarker(marker);
-                        mMap.addCircle(circle);
-                    }
-                }
+        //Method when the user clicks the map to set waypoints
+        mMap.setOnMapClickListener(point -> {
+            LatLong latlong = new LatLong(point);
+            LatLng lat = new LatLng(point.latitude, point.longitude);
 
+            //Computing the distance between the inputted waypoint and the user's current location
+            double distance = convert(latitude, longitude, point.latitude, point.longitude);
+
+            //Will only activate when the user hasn't pressed the "Start" button
+            if(bttn == false){
+                //If the distance of the waypoint exceeds the 200-meters radial limit
+                if(distance > radius){
+                    Toast.makeText(getApplicationContext(), "Warning! Drone will be out of range.", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    //Create marker
+                    allPoints.add(latlong);
+                    allPoints.get(index).setLatlng(lat);
+                    bm = BitmapDescriptorFactory.fromResource(R.drawable.uncheck_marker);
+                    marker.add(index, new MarkerOptions().position(point).title(count + ": " + point.latitude + ", " + point.longitude).draggable(true).icon(bm));
+                    CircleOptions circle = new CircleOptions().center(point).radius(rad)
+                            .strokeWidth(3)
+                            .strokeColor(getResources().getColor(R.color.colorRad))
+                            .fillColor(getResources().getColor(R.color.colorRad));
+
+                    myMarker = mMap.addMarker(marker.get(index));
+                    mMap.addCircle(circle);
+
+                    count++;
+                    index++;
+                }
             }
+
         });
 
+        //When the user presses the "Start" button
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
@@ -200,7 +211,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
                 Handler handler = new Handler(Looper.getMainLooper());
 
                 if(bttn == false){
-                    final Runnable r = new Runnable() {
+                    new Thread(new Runnable() {
+                        @Override
                         public void run() {
                             for(int i = 0 ; i < allPoints.size() ; i++)
                             {
@@ -208,20 +220,18 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
                                 double distanceBetween = SphericalUtil.computeDistanceBetween(latlng1, latlng2);
 
                                 directionPoint.add(latlng2);
+                                if (distanceBetween < SameThreshold){
+                                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
+                                    bm = BitmapDescriptorFactory.fromResource(R.drawable.check_marker);
+                                    //MarkerOptions marker = new MarkerOptions().position(allPoints.get(i).getLatlng()).title(count + "").icon(bm);
+                                    marker.get(i).position(allPoints.get(i).getLatlng()).title(allPoints.get(i).getLatlng().latitude + ", " + allPoints.get(i).getLatlng().longitude).icon(bm);
 
-                                while(!allPoints.get(i).getPass()) {
-                                    if (distanceBetween < SameThreshold){
-                                        Toast.makeText(getApplicationContext(), "NISUD", Toast.LENGTH_SHORT).show();
-                                        bm = BitmapDescriptorFactory.fromResource(R.drawable.check_marker);
-                                        //MarkerOptions marker = new MarkerOptions().position(allPoints.get(i).getLatlng()).title(count + "").icon(bm);
-                                        marker = new MarkerOptions().position(allPoints.get(i).getLatlng()).title(allPoints.get(i).getLatlng().latitude + ", " + allPoints.get(i).getLatlng().longitude).icon(bm);
-                                        myMarker = mMap.addMarker(marker);
-                                        allPoints.get(i).setPass(true);
-                                    }
-                                    else{
-                                        break;
-                                    }
+                                    try{ myMarker = mMap.addMarker(marker.get(i)); }
+                                    catch (Exception e){ }
+
+                                    allPoints.get(i).setPass(true);
                                 }
+
                             }
 
                             directionPoint.add(latlng1);
@@ -229,27 +239,21 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
                                 rectLine.add(directionPoint.get(i));
                             }
 
-                            try {
-                                mMap.addPolyline(rectLine);
-                            }
-                            catch (Exception e){
-                            }
+                            try { mMap.addPolyline(rectLine); }
+                            catch (Exception e){ }
 
                             handler.postDelayed(this, 1000);
                         }
-                    };
-
-                    handler.postDelayed(r, 1000);
+                    }).start();
 
                     bttn = true;
                     startBtn.setText("CANCEL");
-                    textView.setText("STARTED");
                 }
                 else{
-                    bttn = false;
-                    startBtn.setText("START");
-                    textView.setText("NOT STARTED");
-                    //alertDialog();
+//                    bttn = false;
+//                    startBtn.setText("START");
+//                    textView.setText("NOT STARTED");
+                    alertDialog();
                 }
             }
         });
@@ -258,30 +262,23 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
     private void UpdateUI(){
         //Setting the LatLong
         LatLng latLng = new LatLng(latitude, longitude);
-        //Toast.makeText(getApplicationContext(), latitude + ", " + longitude, Toast.LENGTH_SHORT).show();
 
-        //textView.setText(latitude + ", " + longitude);0
         mMap.setMinZoomPreference(14.0f);
         mMap.setMaxZoomPreference(100.0f);
 
-        //BitmapDescriptor bitmapDescriptorFactory = BitmapDescriptorFactory.fromResource(R.drawable.marker);
-        //MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("I am here!");
-        //.icon(bitmapDescriptorFactory);
         CircleOptions circleOptions = new CircleOptions().center(latLng).radius(radius)
                 .strokeWidth(3)
                 .strokeColor(getResources().getColor(R.color.colorRange))
                 .fillColor(getResources().getColor(R.color.colorRange));
-        //MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("I am here!");
+
         mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5));
-       //mMap.addMarker(markerOptions);
         mMap.addCircle(circleOptions);
 
-        rectLine =  new PolylineOptions().width(8).color(Color.RED);
-        //PolylineOptions polylineOptions = new PolylineOptions().add(latLng, (LatLng) allPoints.get(0));
-
+        rectLine =  new PolylineOptions().width(20).color(Color.RED);
     }
 
+    //Requesting on the user for permission. Once accepted, it will throw location updates
     private void startCurrentLocationUpdates() {
         LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -294,7 +291,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
                 return;
             }
         }
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, mLocationCallback, Looper.myLooper());
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, mLocationCallback, Looper.getMainLooper());
     }
 
     private boolean isGooglePlayServicesAvailable() {
@@ -333,7 +330,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
     private void showMarker(@NonNull Location currentLocation) {
         LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
         if (currentLocationMarker == null)
-            currentLocationMarker = mMap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker()).position(latLng));
+            currentLocationMarker = mMap.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker()).position(latLng)
+                    .title(currentLocation.getLatitude() + ", " + currentLocation.getLongitude()));
         else {
             AnimatingMarkerHelper.animateMarkerToGB(currentLocationMarker, latLng, new LatLngInterpolator.Spherical());
         }
@@ -385,12 +383,13 @@ public class controllerpage_waypoint extends AppCompatActivity implements OnMapR
                                         int which) {
                         mMap.clear();
                         Toast.makeText(getApplicationContext(),"The drone will now return to the starting point",Toast.LENGTH_LONG).show();
+                        controllerpage_waypoint.super.finish();
                     }
                 });
         dialog.setNegativeButton("CANCEL",new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(getApplicationContext(),"cancel is clicked",Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"Continuing Edit...",Toast.LENGTH_SHORT).show();
             }
         });
         AlertDialog alertDialog=dialog.create();

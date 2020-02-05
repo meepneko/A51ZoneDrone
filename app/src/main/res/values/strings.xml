@@ -12,4 +12,6 @@
     <string name="stop">Abort Mission!!!</string>
     <string name="location_updated_message" />
     <string name="img_location" />
+
+    <string name="mapbox_access_token">pk.eyJ1IjoibWVlcG5la28iLCJhIjoiY2s2OTBzM3MxMGF5aDNtbnpmcjhnOW45eiJ9.uD8F8Z7dDn5466h3Cwnv1w</string>
 </resources>
