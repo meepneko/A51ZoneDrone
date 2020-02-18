@@ -7,58 +7,61 @@
     tools:context=".controllerpage_setaltitude">
 
     <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="351dp"
-        android:layout_height="485dp"
-        android:foreground="@drawable/a"
+        android:id="@+id/imageView"
+        android:layout_width="700dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/contentDescription"
+        android:foreground="@drawable/set_altitude"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.516"
+        app:layout_constraintHorizontal_bias="0.549"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.186" />
+        app:layout_constraintVertical_bias="0.454"
+        tools:visibility="gone" />
 
     <SeekBar
         android:id="@+id/seekBar"
         android:layout_width="355dp"
         android:layout_height="20dp"
-        android:layout_marginEnd="212dp"
-        android:background="#CDDC39"
+        android:layout_marginEnd="27dp"
+        android:background="@color/colorPrimary"
         android:clickable="false"
-        android:max="500"
-        android:progressBackgroundTint="#009688"
+        android:max="10"
+        android:min="1"
+        android:progressBackgroundTint="@color/colorAccent"
         android:rotation="270"
         android:splitTrack="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.98"
+        app:layout_constraintEnd_toStartOf="@+id/imageView"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.416" />
+        app:layout_constraintVertical_bias="0.478" />
 
     <TextView
         android:id="@+id/Altitude_textView"
         android:layout_width="154dp"
         android:layout_height="40dp"
-        android:layout_marginBottom="128dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="7dp"
         android:background="#2196F3"
         android:drawableTint="#CDDC39"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView2"
-        app:layout_constraintVertical_bias="0.714" />
+        app:layout_constraintEnd_toStartOf="@+id/button_next"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/button_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="4dp"
         android:clickable="false"
-        android:text="Next"
+        android:text="@string/txt_next"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.908"
+        app:layout_constraintHorizontal_bias="0.992"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

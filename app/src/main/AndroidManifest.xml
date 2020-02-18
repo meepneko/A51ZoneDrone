@@ -25,16 +25,17 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
+            android:value="@string/google_maps_key" />xxxxxxxxxxxxxxxxx
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
         <activity
             android:name=".controllerpage_waypoint"
-            android:label="@string/title_activity_controllerpage_waypoint"></activity>
-        <activity android:name=".controller_page_connectWifi" />
-        <activity android:name=".controllerpage_setaltitude" />
+            android:label="@string/title_activity_controllerpage_waypoint"
+            android:screenOrientation="portrait"></activity>
+        <activity android:name=".controller_page_connectWifi" android:screenOrientation="portrait"/>
+        <activity android:name=".controllerpage_setaltitude" android:screenOrientation="landscape"/>
         <activity android:name=".dronepage_on_flight" />
         <activity android:name=".dronepage_compability" />
         <activity android:name=".dronepage_waiting_instruction" />
