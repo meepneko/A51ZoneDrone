@@ -11,15 +11,16 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class controllerpage_setaltitude extends AppCompatActivity {
-   TextView Tvalt;
-   Button Btnnext;
-   SeekBar mySeekbar;
-   int seekBarvalue;
+   private TextView Tvalt;
+   private Button Btnnext;
+   private SeekBar mySeekbar;
+   private int seekBarvalue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controllerpage_setaltitude);
+        getSupportActionBar().hide();
         initialize();
 
         Tvalt.setText("Altitude: "+ seekBarvalue +"m");
@@ -27,7 +28,7 @@ public class controllerpage_setaltitude extends AppCompatActivity {
         Btnnext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(controllerpage_setaltitude.this, controllerpage_waypoint.class);
+                Intent intent = new Intent(controllerpage_setaltitude.this, controller_page_connectWifi.class);
                 intent.putExtra("seekBarvalue", seekBarvalue);
                 startActivity(intent);
             }

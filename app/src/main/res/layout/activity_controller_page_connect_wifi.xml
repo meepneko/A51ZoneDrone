@@ -48,6 +48,16 @@
         android:textSize="20sp"
         android:textStyle="italic" />
 
+    <TextView
+        android:id="@+id/txtConnected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/readMsg"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:text="@string/txtConnected"
+        android:textAlignment="center" />
+
     <EditText
         android:id="@+id/writeMsg"
         android:layout_width="wrap_content"

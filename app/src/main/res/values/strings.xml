@@ -23,5 +23,16 @@
     <string name="txt_connection_status">Connection Status</string>
     <string name="txt_send">Send</string>
     <string name="txt_next">Next</string>
+    <string name="txtConnected">Connecting...</string>
     <string name="contentDescription"></string>
+    <string name="txt10m">10 meters</string>
+    <string name="txt20m">20 meters</string>
+    <string name="txt30m">30 meters</string>
+    <string name="txt40m">40 meters</string>
+    <string name="txt50m">50 meters</string>
+    <string name="txt60m">60 meters</string>
+    <string name="txt70m">70 meters</string>
+    <string name="txt80m">80 meters</string>
+    <string name="txt90m">90 meters</string>
+    <string name="txt100m">100 meters</string>
 </resources>

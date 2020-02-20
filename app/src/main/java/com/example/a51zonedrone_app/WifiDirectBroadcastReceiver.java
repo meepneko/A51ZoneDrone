@@ -10,9 +10,9 @@ import android.widget.Toast;
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
-    WifiP2pManager mManager;
-    WifiP2pManager.Channel mChannel;
-    controller_page_connectWifi mActivity;
+    private WifiP2pManager mManager;
+    private WifiP2pManager.Channel mChannel;
+    private controller_page_connectWifi mActivity;
 
 
     public WifiDirectBroadcastReceiver(WifiP2pManager mManager, WifiP2pManager.Channel mChannel, controller_page_connectWifi mActivity){
@@ -57,6 +57,10 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
              else{
                  mActivity.connectionStatus.setText("Device Disconnected");
              }
+
+             if(networkInfo.isAvailable()) {
+                 mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
+             }
          }
          //Respond to this device's Wi-Fi state changing
          else if(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)){
@@ -67,5 +71,4 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
          }
 
     }
-
 }

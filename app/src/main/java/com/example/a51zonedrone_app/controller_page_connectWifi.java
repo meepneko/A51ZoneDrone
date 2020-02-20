@@ -228,8 +228,11 @@ package com.example.a51zonedrone_app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -250,6 +253,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
@@ -262,12 +266,15 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.a51zonedrone_app.WifiDirectBroadcastReceiver;
+
 public class controller_page_connectWifi extends AppCompatActivity {
 
     Button btnOnOff, btnDiscover, btnSend;
     ListView listView;
-    TextView read_msg_box, connectionStatus;
+    TextView read_msg_box, connectionStatus, txtConnected;
     EditText writeMsg;
+    int seekbarval;
 
     WifiManager wifiManager;
     WifiP2pManager mManager;
@@ -290,6 +297,7 @@ public class controller_page_connectWifi extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controller_page_connect_wifi);
+
         inititialWork();
         exqListener();
     }
@@ -348,11 +356,13 @@ public class controller_page_connectWifi extends AppCompatActivity {
                 final WifiP2pDevice device = deviceArray[i];
                 WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = device.deviceAddress;
+                //config.wps.setup = WpsInfo.PBC;
 
                 mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
                         Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT).show();
+                        txtConnected.setText(seekbarval + "");
                     }
 
                     @Override
@@ -366,11 +376,12 @@ public class controller_page_connectWifi extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = writeMsg.getText().toString();
                 try{
-                    sendReceive.write(msg.getBytes());
+                    //String msg = writeMsg.getText().toString();
+                    sendReceive.write(Integer.toString(seekbarval).getBytes());
+                    //sendReceive.write(msg.getBytes());
                 } catch(Exception e){
-                    Toast.makeText(getApplicationContext(), "Please try reconnecting" , Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Please try reconnecting. Reason: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -384,7 +395,10 @@ public class controller_page_connectWifi extends AppCompatActivity {
         read_msg_box = (TextView) findViewById(R.id.readMsg);
         connectionStatus = (TextView) findViewById(R.id.connectionStatus);
         writeMsg = (EditText) findViewById(R.id.writeMsg);
+        txtConnected = (TextView) findViewById(R.id.txtConnected);
 
+        Intent intent = getIntent();
+        seekbarval = intent.getIntExtra("seekBarvalue",0);
         if (android.os.Build.VERSION.SDK_INT > 9)
         {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -392,6 +406,8 @@ public class controller_page_connectWifi extends AppCompatActivity {
         }
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if(wifiManager.isWifiEnabled()) btnOnOff.setText("ON");
+        else btnOnOff.setText("OFF");
 
         //This class provides the API for managing Wi-Fi peer-to-peer connectivity
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -444,6 +460,7 @@ public class controller_page_connectWifi extends AppCompatActivity {
 
             if(info.groupFormed && info.isGroupOwner){
                 connectionStatus.setText("Controller");
+                Log.d("TAG", "CONNECTED");
                 serverClass = new ServerClass();
                 serverClass.start();
             }
@@ -460,6 +477,7 @@ public class controller_page_connectWifi extends AppCompatActivity {
     protected void onResume(){
         super.onResume();
         registerReceiver(mReceiver, mIntentFilter);
+        Log.d("TAG", "RESUMED");
     }
 
     //unregister the broadcast receiver
@@ -467,6 +485,12 @@ public class controller_page_connectWifi extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(mReceiver);
+        Log.d("TAG", "PAUSED");
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
     }
 
     public class ServerClass extends Thread{
@@ -499,7 +523,6 @@ public class controller_page_connectWifi extends AppCompatActivity {
 
                 if(outputStream == null){
                     outputStream = socket.getOutputStream();
-                    Log.d("TAG", "NISUD");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
