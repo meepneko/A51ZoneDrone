@@ -28,7 +28,7 @@ public class controllerpage_setaltitude extends AppCompatActivity {
         Btnnext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(controllerpage_setaltitude.this, controller_page_connectWifi.class);
+                Intent intent = new Intent(controllerpage_setaltitude.this, controllerpage_waypoint.class);
                 intent.putExtra("seekBarvalue", seekBarvalue);
                 startActivity(intent);
             }

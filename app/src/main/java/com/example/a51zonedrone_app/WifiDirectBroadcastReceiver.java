@@ -12,10 +12,10 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private controller_page_connectWifi mActivity;
+    private controllerpage_waypoint mActivity;
 
 
-    public WifiDirectBroadcastReceiver(WifiP2pManager mManager, WifiP2pManager.Channel mChannel, controller_page_connectWifi mActivity){
+    public WifiDirectBroadcastReceiver(WifiP2pManager mManager, WifiP2pManager.Channel mChannel, controllerpage_waypoint mActivity){
         this.mManager = mManager;
         this.mChannel = mChannel;
         this.mActivity = mActivity;
@@ -27,12 +27,16 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
          String action= intent.getAction();
          //Check to see if Wi-Fi is enabled and notify appropriate activity
          if(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)){
-            int state= intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE,-1);
+
+             //UI update to indicate wifi p2p status
+             int state= intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE,-1);
 
             if(state==WifiP2pManager.WIFI_P2P_STATE_ENABLED){
-                Toast.makeText(context,"Wifi is ON",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(context,"Wifi is ON",Toast.LENGTH_SHORT).show();
+                mActivity.setIsWifiP2pEnabled(true);
             }else{
-                Toast.makeText(context,"Wifi is OFF",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(context,"Wifi is OFF",Toast.LENGTH_SHORT).show();
+                mActivity.setIsWifiP2pEnabled(false);
             }
          }
          //Call WiFiP2pManager.requestPeers() to get a list of current peers
@@ -53,14 +57,16 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
              if(networkInfo.isConnected()){
                  mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
+                 mActivity.setIsWifiConnected(true);
              }
              else{
-                 mActivity.connectionStatus.setText("Device Disconnected");
+                 mActivity.setIsWifiConnected(false);
+                 //mActivity.connectionStatus.setText("Device Disconnected");
              }
 
-             if(networkInfo.isAvailable()) {
-                 mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
-             }
+//             if(networkInfo.isAvailable()) {
+//                 mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
+//             }
          }
          //Respond to this device's Wi-Fi state changing
          else if(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)){

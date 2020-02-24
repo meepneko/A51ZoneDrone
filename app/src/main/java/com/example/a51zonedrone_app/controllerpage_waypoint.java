@@ -401,17 +401,31 @@ package com.example.a51zonedrone_app;
 
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 import android.os.Bundle;
 // Classes needed to initialize the map
@@ -441,6 +455,13 @@ import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -516,7 +537,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private static final String ICON_ID = "ICON_ID";
     private static final String LAYER_ID = "LAYER_ID";
     private static final String CIRCLE_LAYER_ID = "CIRCLE_LAYER_ID";
-    private int seekBarvalue;
     private float radius = 200;
     private boolean bttn = false;
     private boolean checker = false;
@@ -527,6 +547,31 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private PolylineOptions polyl = new PolylineOptions();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
+
+    //For WiFi Direct
+    WifiManager wifiManager;
+    WifiP2pManager mManager;
+    WifiP2pManager.Channel mChannel;
+    ServerClass serverClass;
+    ClientClass clientClass;
+    SendReceive sendReceive;
+    BroadcastReceiver mReceiver;
+    IntentFilter mIntentFilter;
+    List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>();
+    String[] deviceNameArray; //Used to show device name in ListView
+    WifiP2pDevice[] deviceArray; //Used to connect a Device
+    private int seekbarval;
+    private boolean isWifiP2pEnabled = false;
+    private boolean isWifiConnected = false;
+    static final int MESSAGE_READ = 1;
+
+    public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
+        this.isWifiP2pEnabled = isWifiP2pEnabled;
+    }
+
+    public void setIsWifiConnected(boolean isWifiConnected) {
+        this.isWifiConnected = isWifiConnected;
+    }
 
     private class controllerpage_waypointLocationCallback
             implements LocationEngineCallback<LocationEngineResult> {
@@ -547,14 +592,18 @@ public class controllerpage_waypoint extends AppCompatActivity implements
             controllerpage_waypoint activity = activityWeakReference.get();
 
             if (activity != null) {
-                Location location = result.getLastLocation();
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
+                try {
+                    Location location = result.getLastLocation();
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
 
-                UpdateUI(latitude, longitude);
+                    UpdateUI(latitude, longitude);
 
-                if (location == null) {
-                    return;
+                    if (location == null) {
+                        return;
+                    }
+                } catch(Exception e){
+                    Toast.makeText(getApplicationContext(), "Please make sure you're connected to the internet and your location is on.", Toast.LENGTH_SHORT).show();
                 }
 
                 // Create a Toast which displays the new location's coordinates
@@ -596,6 +645,9 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         // This contains the MapView in XML and needs to be called after the access token is configured.
         setContentView(R.layout.activity_controllerpage_waypoint);
 
+        Intent intent = getIntent();
+        seekbarval = intent.getIntExtra("seekBarvalue",0);
+
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -603,9 +655,23 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         startBtn = (Button)findViewById(R.id.startBtn);
         currentLoc = (ImageButton)findViewById(R.id.currentLocationImageButton);
 
-        Intent intent = getIntent();
-        seekBarvalue = intent.getIntExtra("seekBarvalue", 10);
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+
+        //This class provides the API for managing Wi-Fi peer-to-peer connectivity
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+
+        //A channel that connects the application to the Wi-Fi p2p framework
+        //Most p2p operations require a Channel as an argument
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
     @Override
@@ -661,9 +727,11 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 //                        }
 //                    });
 
+                    allPoints.get(index).setPass(false);
+
                     IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
                     Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
-                    marker.add(index,new MarkerOptions().title(index + "").position(lat2).icon(icon));
+                    marker.add(index,new MarkerOptions().title(index + ", Status: " + allPoints.get(index).getPass()).position(lat2).setIcon(icon));
 
                     mapboxMap.addMarker(marker.get(index));
                     index++;
@@ -689,55 +757,39 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 Handler handler = new Handler(Looper.getMainLooper());
 
 
-                if(bttn == false){
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-
-                            handler.postDelayed(this, 1000);
-                        }
-                    }).start();
-
-                    for(int i = 0 ; i < allPoints.size() ; i++)
-                    {
-                        Toast.makeText(getApplicationContext(),"NISUD",Toast.LENGTH_SHORT);
-
-                        LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
-                        double distanceBetween = latlng1.distanceTo(latlng2);
-
-                        directionPoint.add(latlng2);
-                        if (distanceBetween < SameThreshold){
-                            //TODO: Himoag array ang markers unya usaba ni nga part sa code
-
-
-                            IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
-                            Icon icon = iconFactory.fromResource(R.drawable.check_marker);
-                            marker.add(i,new MarkerOptions().title("Passed").icon(icon));
-//                            bm = BitmapDescriptorFactory.fromResource(R.drawable.check_marker);
-//                            //MarkerOptions marker = new MarkerOptions().position(allPoints.get(i).getLatlng()).title(count + "").icon(bm);
-//                            marker.get(i).position(allPoints.get(i).getLatlng()).title(allPoints.get(i).getLatlng().latitude + ", " + allPoints.get(i).getLatlng().longitude).icon(bm);
-//
-//                            try{ myMarker = mMap.addMarker(marker.get(i)); }
-//                            catch (Exception e){ }
-//
-//                            allPoints.get(i).setPass(true);
-                        }
-
-                    }
-
-                    directionPoint.add(latlng1);
-
-                    lineOptions.withLatLngs(directionPoint).withLineColor("#EE3B3B").withLineWidth(3.0f);
-                    lineManager.create(lineOptions);
-
-                    bttn = true;
-                    startBtn.setText("CANCEL");
+                if (!isWifiP2pEnabled) {
+                    Toast.makeText(getApplicationContext(), "Enable WiFi Direct from the action bar button above or system settings", Toast.LENGTH_LONG).show();
                 }
-                else{
-//                    bttn = false;
-//                    startBtn.setText("START");
-//                    textView.setText("NOT STARTED");
-                    alertDialog();
+                else {
+                    if(!isWifiConnected){
+                        Toast.makeText(getApplicationContext(), "Make sure you're connected to another device.", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        if (bttn == false) {
+//                            new Thread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    handler.postDelayed(this, 1000);
+//                                }
+//                            }).start();
+
+                            for (int i = 0; i < allPoints.size(); i++) {
+                                LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
+                                directionPoint.add(latlng2);
+                            }
+                            directionPoint.add(latlng1);
+
+                            lineOptions.withLatLngs(directionPoint).withLineColor("#EE3B3B").withLineWidth(3.0f);
+                            lineManager.create(lineOptions);
+
+                            bttn = true;
+                            startBtn.setText("CANCEL");
+                        } else {
+//                            bttn = false;
+//                            startBtn.setText("START");
+                            alertDialog();
+                        }
+                    }
                 }
             }
         });
@@ -759,7 +811,36 @@ public class controllerpage_waypoint extends AppCompatActivity implements
             mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius)).fillColor(Color.parseColor("#12121212")));
             checker = true;
         }
+        if(bttn)
+        {
+            double SameThreshold = 100;
+            for (int i = 0; i < allPoints.size(); i++) {
+                //Toast.makeText(getApplicationContext(), "NISUD" + i, Toast.LENGTH_SHORT).show();
+                Log.d("TAG1","NISUD" + i);
+                LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
+                double distanceBetween = latLng.distanceTo(latlng2);
+                if (distanceBetween > SameThreshold) {
+                    Log.d("TAG2","wew" + i);
+                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
 
+
+                    allPoints.get(i).setPass(true);
+                    IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
+                    Icon icon = iconFactory.fromResource(R.drawable.check_marker);
+                    marker.get(i).setIcon(icon);
+                    marker.set(i, new MarkerOptions().title(i + ", Status: " + allPoints.get(i).getPass()).setIcon(icon));
+//                            bm = BitmapDescriptorFactory.fromResource(R.drawable.check_marker);
+//                            //MarkerOptions marker = new MarkerOptions().position(allPoints.get(i).getLatlng()).title(count + "").icon(bm);
+//                            marker.get(i).position(allPoints.get(i).getLatlng()).title(allPoints.get(i).getLatlng().latitude + ", " + allPoints.get(i).getLatlng().longitude).icon(bm);
+//
+//                            try{ myMarker = mMap.addMarker(marker.get(i)); }
+//                            catch (Exception e){ }
+//
+//                            allPoints.get(i).setPass(true);
+                }
+
+            }
+        }
     }
 
     private ArrayList<LatLng> polygonCircleForCoordinate(LatLng location, double radius){
@@ -910,12 +991,15 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        registerReceiver(mReceiver, mIntentFilter);
         mapView.onResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(mReceiver);
         mapView.onPause();
     }
 
@@ -945,5 +1029,133 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
+    }
+
+    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+        @Override
+        public void onConnectionInfoAvailable(WifiP2pInfo info) {
+            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
+
+            if(info.groupFormed && info.isGroupOwner){
+                Log.d("TAG", "CONNECTED");
+                serverClass = new ServerClass();
+                serverClass.start();
+            }
+            else if(info.groupFormed){
+                clientClass = new ClientClass(groupOwnerAddress);
+                clientClass.start();
+            }
+        }
+    };
+
+    WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+        @Override
+        public void onPeersAvailable(WifiP2pDeviceList peersList) {
+            if(!peersList.getDeviceList().equals(peers)){
+                peers.clear();
+                peers.addAll(peersList.getDeviceList());
+
+                deviceNameArray = new String[peersList.getDeviceList().size()];
+                deviceArray = new WifiP2pDevice[peersList.getDeviceList().size()];
+                int index = 0;
+
+                for(WifiP2pDevice device : peersList.getDeviceList()){
+                    deviceNameArray[index] = device.deviceName;
+                    deviceArray[index] = device;
+                    index++;
+                }
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
+                //listView.setAdapter(adapter);
+            }
+
+            if(peers.size() == 0){
+                Toast.makeText(getApplicationContext(), "No Device Found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+    };
+
+    public class ServerClass extends Thread{
+        Socket socket;
+        ServerSocket serverSocket;
+
+        @Override
+        public void run() {
+            try {
+                serverSocket = new ServerSocket(8888);
+                socket = serverSocket.accept();
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class SendReceive extends Thread{
+        private Socket socket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
+
+        public SendReceive(Socket skt){
+            socket = skt;
+            try {
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+
+                if(outputStream == null){
+                    outputStream = socket.getOutputStream();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run() {
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            while(socket != null){
+                try {
+                    bytes = inputStream.read(buffer);
+                    if(bytes > 0){
+                        //handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void write(byte[] bytes){
+            try {
+                outputStream.write(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class ClientClass extends Thread{
+        Socket socket;
+        String hostAdd;
+
+        public ClientClass(InetAddress hostAddress){
+            hostAdd = hostAddress.getHostAddress();
+            socket = new Socket();
+        }
+
+        @Override
+        public void run() {
+            try {
+                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

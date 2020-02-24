@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         controlBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent startIntent = new Intent(getApplicationContext(), controller_page_connectWifi.class);
+                Intent startIntent = new Intent(getApplicationContext(), controllerpage_setaltitude.class);
                 startActivity(startIntent);
                 Log.d("check", "Mate main");
             }
