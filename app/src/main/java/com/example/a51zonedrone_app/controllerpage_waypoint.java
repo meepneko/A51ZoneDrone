@@ -553,7 +553,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
     ServerClass serverClass;
-    ClientClass clientClass;
     SendReceive sendReceive;
     BroadcastReceiver mReceiver;
     IntentFilter mIntentFilter;
@@ -789,6 +788,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 //                            startBtn.setText("START");
                             alertDialog();
                         }
+                        String msg = seekbarval + allPoints.toString();
+                        sendReceive.write(msg.getBytes());
                     }
                 }
             }
@@ -1031,6 +1032,33 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         mapView.onLowMemory();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_list, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_directEnable:
+                if (mManager != null && mChannel != null) {
+
+                    // Since this is the system wireless settings activity, it's
+                    // not going to send us a result. We will be notified by
+                    // WiFiDeviceBroadcastReceiver instead.
+
+                    startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                } else {
+                    //Log.e(TAG, "channel or manager is null");
+                }
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
@@ -1040,10 +1068,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 Log.d("TAG", "CONNECTED");
                 serverClass = new ServerClass();
                 serverClass.start();
-            }
-            else if(info.groupFormed){
-                clientClass = new ClientClass(groupOwnerAddress);
-                clientClass.start();
             }
         }
     };
@@ -1085,72 +1109,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
             try {
                 serverSocket = new ServerSocket(8888);
                 socket = serverSocket.accept();
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private class SendReceive extends Thread{
-        private Socket socket;
-        private InputStream inputStream;
-        private OutputStream outputStream;
-
-        public SendReceive(Socket skt){
-            socket = skt;
-            try {
-                inputStream = socket.getInputStream();
-                outputStream = socket.getOutputStream();
-
-                if(outputStream == null){
-                    outputStream = socket.getOutputStream();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void run() {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            while(socket != null){
-                try {
-                    bytes = inputStream.read(buffer);
-                    if(bytes > 0){
-                        //handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        public void write(byte[] bytes){
-            try {
-                outputStream.write(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public class ClientClass extends Thread{
-        Socket socket;
-        String hostAdd;
-
-        public ClientClass(InetAddress hostAddress){
-            hostAdd = hostAddress.getHostAddress();
-            socket = new Socket();
-        }
-
-        @Override
-        public void run() {
-            try {
-                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();
             } catch (IOException e) {
