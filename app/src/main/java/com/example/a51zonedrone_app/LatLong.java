@@ -9,11 +9,9 @@ public class LatLong {
     private boolean pass;
     public LatLong(LatLng ll)
     {
+        latitude = ll.getLatitude();
+        longitude = ll.getLongitude();
         pass = false;
-    }
-
-    public LatLong() {
-
     }
 
     // Getter latlng
@@ -24,6 +22,8 @@ public class LatLong {
     // Setter latlng
     public void setLatlng(LatLng ll) {
         latlng = ll;
+        latitude = ll.getLatitude();
+        longitude = ll.getLongitude();
     }
     // Getter pass
     public boolean getPass() {
@@ -49,5 +49,11 @@ public class LatLong {
 
     public double getLongitude(){
         return longitude;
+    }
+
+    @Override
+    public String toString()
+    {
+        return (this.latitude+"/"+this.longitude+"/"+this.pass);
     }
 }

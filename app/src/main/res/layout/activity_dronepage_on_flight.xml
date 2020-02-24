@@ -8,7 +8,7 @@
     tools:context=".dronepage_on_flight">
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/txt_receive"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/txtdrone_on_flight"

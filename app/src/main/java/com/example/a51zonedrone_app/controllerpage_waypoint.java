@@ -16,6 +16,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
@@ -245,6 +246,12 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         // This contains the MapView in XML and needs to be called after the access token is configured.
         setContentView(R.layout.activity_controllerpage_waypoint);
 
+        if (android.os.Build.VERSION.SDK_INT > 9)
+        {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+
         Intent intent = getIntent();
         seekbarval = intent.getIntExtra("seekBarvalue",0);
 
@@ -355,8 +362,15 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                         } else {
                             alertDialog();
                         }
-                        String msg = seekbarval + allPoints.toString();
-                        sendReceive.write(msg.getBytes());
+
+                        try {
+                            String msg = seekbarval + allPoints.toString();
+                            Log.d("TAG3",""+msg);
+                            sendReceive.write(msg.getBytes());
+                        } catch(Exception e){
+                            Toast.makeText(getApplicationContext(), "Please try reconnecting. Reason: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                        }
                     }
                 }
             }
@@ -589,7 +603,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         inflater.inflate(R.menu.menu_list, menu);
         return true;
     }
-    
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
