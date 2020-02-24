@@ -13,7 +13,6 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -27,11 +26,12 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 
-public class dronepage_compability extends AppCompatActivity {
+public class dronepage_compatibility extends AppCompatActivity {
     private SensorManager sensorManager;
     private LocationManager locationManager;
     private boolean checkGY, checkAC, checkMA;
     private TextView onConnect;
+
 
     static final int MESSAGE_READ = 1;
 
@@ -42,26 +42,13 @@ public class dronepage_compability extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_dronepage_waiting_instruction);
+        setContentView(R.layout.activity_compatibility);
         onConnect = findViewById(R.id.onConnect);
 
         sensorManager =(SensorManager) getSystemService(Context.SENSOR_SERVICE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        //List<Sensor> sensorList  = mSensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
 
         StringBuilder sensorText= new StringBuilder();
-
-        //Gyroscope
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null){
-            // Success!
-            checkGY = true;
-            sensorText.append(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE).getName()).append(
-                    System.getProperty("line.separator"));
-        } else {
-            // Failure!
-            checkGY = false;
-            sensorText.append("No Gyroscope found").append(System.getProperty("line.separator"));
-        }
 
         //Accelerometer
         if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null){
@@ -87,12 +74,6 @@ public class dronepage_compability extends AppCompatActivity {
             sensorText.append("No Magnetometer found").append(System.getProperty("line.separator"));
         }
 
-
-//        for (Sensor currentSensor : sensorList ) {
-//            sensorText.append(currentSensor.getName()).append(
-//                    System.getProperty("line.separator"));
-//        }
-
         TextView sensorTextView = (TextView) findViewById(R.id.sensor_list);
         sensorTextView.setText(sensorText);
 
@@ -100,12 +81,12 @@ public class dronepage_compability extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkGY == true && checkAC == true && checkMA == true) {
+                if(checkAC == true && checkMA == true) {
                     Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
                     startActivity(startIntent);
                 }
                 else{
-                    Toast.makeText(dronepage_compability.this, "Cannot fly the drone without the required sensors.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(dronepage_compatibility.this, "Cannot fly the drone without the required sensors.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -129,7 +110,6 @@ public class dronepage_compability extends AppCompatActivity {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
             final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-
             if(info.groupFormed){
                 onConnect.setText("Drone");
                 clientClass = new ClientClass(groupOwnerAddress);
