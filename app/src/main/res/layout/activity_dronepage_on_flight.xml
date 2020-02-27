@@ -7,13 +7,23 @@
     android:orientation="horizontal"
     tools:context=".dronepage_on_flight">
 
-    <TextView
-        android:id="@+id/txt_receive"
+    <com.mapbox.mapboxsdk.maps.MapView
+        android:id="@+id/mapView_drone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/txtdrone_on_flight"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txt_receive"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="120dp"
+        android:text="@string/txtdrone_on_flight"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.851" />
 </androidx.constraintlayout.widget.ConstraintLayout>

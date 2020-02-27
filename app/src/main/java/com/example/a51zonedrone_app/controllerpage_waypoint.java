@@ -69,7 +69,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 // Classes needed to add the location engine
 import com.mapbox.android.core.location.LocationEngine;
@@ -83,25 +82,8 @@ import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
-import com.mapbox.mapboxsdk.plugins.annotation.CircleManager;
-import com.mapbox.mapboxsdk.plugins.annotation.CircleOptions;
 import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
 import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolManager;
-import com.mapbox.mapboxsdk.plugins.annotation.SymbolOptions;
-import com.mapbox.mapboxsdk.style.layers.CircleLayer;
-import com.mapbox.mapboxsdk.style.layers.Layer;
-import com.mapbox.mapboxsdk.style.layers.LineLayer;
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
-import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
-import com.mapbox.mapboxsdk.style.light.Position;
-import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
-
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleColor;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleOpacity;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleRadius;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
-import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconOffset;
 
 /**
  * Use the Mapbox Core Library to listen to device location updates
@@ -173,8 +155,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private boolean isWifiConnected = false;
     private ListView listView;
     private dronepage_on_flight drone;
-
-    ClientClass clientClass;
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
         this.isWifiP2pEnabled = isWifiP2pEnabled;
@@ -376,9 +356,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
                         try {
                             String msg = seekbarval + allPoints.toString();
-                            Log.d("TAG3",""+msg);
+                            Log.d("TAG3","" + msg);
                             sendReceive.write(msg.getBytes());
-
                         } catch(Exception e){
                             Toast.makeText(getApplicationContext(), "Please try reconnecting. Reason: " + e.getMessage(), Toast.LENGTH_SHORT).show();
 
@@ -402,7 +381,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         {
             double SameThreshold = 17.5;
             for (int i = 0; i < allPoints.size(); i++) {
-                Log.d("TAG1","NISUD" + i);
                 LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
                 distanceBetween = latLng.distanceTo(latlng2);
 
@@ -732,10 +710,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 serverClass = new ServerClass();
                 serverClass.run();
             }
-            else if(info.groupFormed){
-                clientClass = new ClientClass(groupOwnerAddress);
-                clientClass.run();
-            }
         }
     };
 
@@ -749,7 +723,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 serverSocket = new ServerSocket(8888);
                 socket = serverSocket.accept();
                 sendReceive = new SendReceive(socket);
-                Log.d("CHA", "CHARISSEMAot");
                 sendReceive.start();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -757,25 +730,31 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         }
     }
 
-    public class ClientClass extends Thread{
-        Socket socket;
-        String hostAdd;
+    public class SendReceive extends Thread{
+        private Socket socket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
 
-        public ClientClass(InetAddress hostAddress){
-            hostAdd = hostAddress.getHostAddress();
-            socket = new Socket();
-        }
-
-        @Override
-        public void run() {
+        public SendReceive(Socket skt){
+            socket = skt;
             try {
-                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+
+                if(outputStream == null){
+                    outputStream = socket.getOutputStream();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void write(byte[] bytes){
+            try {
+                outputStream.write(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
-
 }

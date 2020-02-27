@@ -4,11 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.location.Location;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -29,7 +31,33 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mapbox.android.core.location.LocationEngine;
+import com.mapbox.android.core.location.LocationEngineCallback;
+import com.mapbox.android.core.location.LocationEngineProvider;
+import com.mapbox.android.core.location.LocationEngineRequest;
+import com.mapbox.android.core.location.LocationEngineResult;
+import com.mapbox.android.core.permissions.PermissionsListener;
+import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.Point;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.location.LocationComponent;
+import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
+import com.mapbox.mapboxsdk.location.modes.CameraMode;
+import com.mapbox.mapboxsdk.location.modes.RenderMode;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -37,12 +65,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class dronepage_on_flight extends AppCompatActivity {
+public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener {
     private int altitude;
     private TextView receive;
     ClientClass clientClass;
     SendReceive sendReceive;
-    ServerClass serverClass;
     WifiManager wifiManager;
     WifiP2pManager mManager;
     BroadcastReceiver mReceiver;
@@ -58,6 +85,20 @@ public class dronepage_on_flight extends AppCompatActivity {
     WifiP2pManager.Channel mChannel;
     static final int MESSAGE_READ = 1;
 
+    //For the map
+    private static final String SOURCE_ID = "SOURCE_ID";
+    private static final String ICON_ID = "ICON_ID";
+    private static final String LAYER_ID = "LAYER_ID";
+    private PermissionsManager permissionsManager;
+    private LocationEngine locationEngine;
+    private MapView mapView;
+    private MapboxMap mapboxMap;
+    private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
+    private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
+    private dronepage_on_flightLocationCallback callback = new dronepage_on_flightLocationCallback(this);
+    private static double latitude, longitude;
+
+
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
         this.isWifiP2pEnabled = isWifiP2pEnabled;
     }
@@ -66,11 +107,77 @@ public class dronepage_on_flight extends AppCompatActivity {
         this.isWifiConnected = isWifiConnected;
     }
 
+    private class dronepage_on_flightLocationCallback
+            implements LocationEngineCallback<LocationEngineResult> {
+
+        private final WeakReference<dronepage_on_flight> activityWeakReference;
+
+        dronepage_on_flightLocationCallback(dronepage_on_flight activity) {
+            this.activityWeakReference = new WeakReference<>(activity);
+        }
+
+        /**
+         * The LocationEngineCallback interface's method which fires when the device's location has changed.
+         *
+         * @param result the LocationEngineResult object which has the last known location within it.
+         */
+        @Override
+        public void onSuccess(LocationEngineResult result) {
+            dronepage_on_flight activity = activityWeakReference.get();
+
+            if (activity != null) {
+                try {
+                    Location location = result.getLastLocation();
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+
+                    //UpdateUI(latitude, longitude);
+
+                    if (location == null) {
+                        return;
+                    }
+                } catch(Exception e){
+                    Toast.makeText(getApplicationContext(), "Please make sure you're connected to the internet and your location is on.", Toast.LENGTH_SHORT).show();
+                }
+
+                // Create a Toast which displays the new location's coordinates
+                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
+                        String.valueOf(latitude), String.valueOf(longitude)),
+                        Toast.LENGTH_SHORT).show();
+
+                // Pass the new location to the Maps SDK's LocationComponent
+                if (activity.mapboxMap != null && result.getLastLocation() != null) {
+                    activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
+                }
+            }
+        }
+
+        /**
+         * The LocationEngineCallback interface's method which fires when the device's location can not be captured
+         *
+         * @param exception the exception message
+         */
+        @Override
+        public void onFailure(@NonNull Exception exception) {
+            Log.d("LocationChangeActivity", exception.getLocalizedMessage());
+            dronepage_on_flight activity = activityWeakReference.get();
+            if (activity != null) {
+                Toast.makeText(activity, exception.getLocalizedMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_dronepage_on_flight);
         receive = findViewById(R.id.txt_receive);
+
+        mapView = findViewById(R.id.mapView_drone);
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
 
        //Bundle b = getIntent().getExtras();
         //altitude = b.getInt("altitude");
@@ -102,16 +209,107 @@ public class dronepage_on_flight extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-        registerReceiver(mReceiver, mIntentFilter);
+    public void onMapReady(@NonNull MapboxMap mapboxMap) {
+        this.mapboxMap = mapboxMap;
+
+        mapboxMap.setStyle(new Style.Builder().fromUri("mapbox://styles/mapbox/traffic-night-v2"),
+                new Style.OnStyleLoaded() {
+                    @Override
+                    public void onStyleLoaded(@NonNull Style style) {
+                        enableLocationComponent(style);
+                    }
+                });
+
+        List<Feature> symbolLayerIconFeatureList = new ArrayList<>();
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(-57.225365, -33.213144)));
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(-54.14164, -33.981818)));
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(-56.990533, -30.583266)));
+    }
+
+    /**
+     * Initialize the Maps SDK's LocationComponent
+     */
+    @SuppressWarnings( {"MissingPermission"})
+    private void enableLocationComponent(@NonNull Style loadedMapStyle) {
+        // Check if permissions are enabled and if not request
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+
+            // Get an instance of the component
+            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+
+            // Set the LocationComponent activation options
+            LocationComponentActivationOptions locationComponentActivationOptions =
+                    LocationComponentActivationOptions.builder(this, loadedMapStyle)
+                            .useDefaultLocationEngine(false)
+                            .build();
+
+            // Activate with the LocationComponentActivationOptions object
+            locationComponent.activateLocationComponent(locationComponentActivationOptions);
+
+            // Enable to make component visible
+            locationComponent.setLocationComponentEnabled(true);
+
+            // Set the component's camera mode
+            locationComponent.setCameraMode(CameraMode.TRACKING);
+
+            // Set the component's render mode
+            locationComponent.setRenderMode(RenderMode.COMPASS);
+
+            initLocationEngine();
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
+        }
+    }
+
+    /**
+     * Set up the LocationEngine and the parameters for querying the device's location
+     */
+    @SuppressLint("MissingPermission")
+    private void initLocationEngine() {
+        locationEngine = LocationEngineProvider.getBestLocationEngine(this);
+
+        LocationEngineRequest request = new LocationEngineRequest.Builder(DEFAULT_INTERVAL_IN_MILLISECONDS)
+                .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY)
+                .setMaxWaitTime(DEFAULT_MAX_WAIT_TIME).build();
+
+        locationEngine.requestLocationUpdates(request, callback, getMainLooper());
+        locationEngine.getLastLocation(callback);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(mReceiver);
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public void onExplanationNeeded(List<String> permissionsToExplain) {
+        Toast.makeText(this, R.string.user_location_permission_explanation, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPermissionResult(boolean granted) {
+        if (granted) {
+            if (mapboxMap.getStyle() != null) {
+                enableLocationComponent(mapboxMap.getStyle());
+            }
+        } else {
+            Toast.makeText(this, R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    private void animateCamera(@NonNull LatLng location) {
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(getCameraPositionWithBearing(latLng)));
+    }
+
+    @NonNull
+    private CameraPosition getCameraPositionWithBearing(LatLng latLng) {
+        return new CameraPosition.Builder().target(latLng).zoom(16).build();
     }
 
     @Override
@@ -150,8 +348,8 @@ public class dronepage_on_flight extends AppCompatActivity {
                         AlertDialog.Builder alertDialog = new AlertDialog.Builder(dronepage_on_flight.this);
                         alertDialog.setTitle("Connect to an available device:");
 
-                        View rowList = getLayoutInflater().inflate(R.layout.listview_list2, null);
-                        listView = rowList.findViewById(R.id.listView2);
+                        View rowList = getLayoutInflater().inflate(R.layout.listview_list, null);
+                        listView = rowList.findViewById(R.id.listView);
                         //adapter.notifyDataSetChanged();
                         alertDialog.setView(rowList);
                         AlertDialog dialog = alertDialog.create();
@@ -218,6 +416,63 @@ public class dronepage_on_flight extends AppCompatActivity {
         }
     };
 
+    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+        @Override
+        public void onConnectionInfoAvailable(WifiP2pInfo info) {
+            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
+
+            if(info.groupFormed){
+                clientClass = new ClientClass(groupOwnerAddress);
+                clientClass.start();
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        registerReceiver(mReceiver, mIntentFilter);
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mReceiver);
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
     Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message msg) {
@@ -225,27 +480,17 @@ public class dronepage_on_flight extends AppCompatActivity {
                 case MESSAGE_READ:
                     byte[] readBuff = (byte[]) msg.obj;
                     String tempMsg = new String(readBuff, 0, msg.arg1);
+                    receive.setText(tempMsg);
                     break;
             }
             return true;
         }
     });
 
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
-        @Override
-        public void onConnectionInfoAvailable(WifiP2pInfo info) {
-            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
 
-            if(info.groupFormed && info.isGroupOwner){
-                serverClass = new ServerClass();
-                serverClass.run();
-            }
-            else if(info.groupFormed){
-                clientClass = new ClientClass(groupOwnerAddress);
-                clientClass.start();
-            }
-        }
-    };
+    }
 
     public class ClientClass extends Thread{
         Socket socket;
@@ -267,19 +512,48 @@ public class dronepage_on_flight extends AppCompatActivity {
             }
         }
     }
-    public class ServerClass extends Thread{
-        Socket socket;
-        ServerSocket serverSocket;
+
+    public class SendReceive extends Thread{
+        private Socket socket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
+        private String receive;
+
+        static final int MESSAGE_READ = 1;
+
+        public String getReceive(){
+            return receive;
+        }
+
+
+        public SendReceive(Socket skt){
+            socket = skt;
+            try {
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+
+                if(outputStream == null){
+                    outputStream = socket.getOutputStream();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         @Override
         public void run() {
-            try {
-                serverSocket = new ServerSocket(8888);
-                socket = serverSocket.accept();
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
-            } catch (IOException e) {
-                e.printStackTrace();
+            byte[] buffer = new byte[1024];
+            int bytes;
+
+            while(socket != null){
+                try {
+                    bytes = inputStream.read(buffer);
+                    if(bytes > 0){
+                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
