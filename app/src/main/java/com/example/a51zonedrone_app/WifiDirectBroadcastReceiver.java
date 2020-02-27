@@ -4,9 +4,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.util.Log;
 import android.widget.Toast;
+
+import java.net.InetAddress;
+
+import static com.mapbox.mapboxsdk.Mapbox.getApplicationContext;
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
@@ -14,11 +21,21 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private WifiP2pManager.Channel mChannel;
     private controllerpage_waypoint mActivity;
 
+    private WifiP2pManager manager;
+    private WifiP2pManager.Channel channel;
+    private dronepage_on_flight activity;
+
 
     public WifiDirectBroadcastReceiver(WifiP2pManager mManager, WifiP2pManager.Channel mChannel, controllerpage_waypoint mActivity){
         this.mManager = mManager;
         this.mChannel = mChannel;
         this.mActivity = mActivity;
+    }
+
+    public WifiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, dronepage_on_flight activity){
+        this.manager = manager;
+        this.channel = channel;
+        this.activity = activity;
     }
 
     @Override
@@ -33,10 +50,14 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
             if(state==WifiP2pManager.WIFI_P2P_STATE_ENABLED){
                 //Toast.makeText(context,"Wifi is ON",Toast.LENGTH_SHORT).show();
-                mActivity.setIsWifiP2pEnabled(true);
+                if(mActivity != null) mActivity.setIsWifiP2pEnabled(true);
+
+                if(activity != null) activity.setIsWifiP2pEnabled(true);
             }else{
                 //Toast.makeText(context,"Wifi is OFF",Toast.LENGTH_SHORT).show();
-                mActivity.setIsWifiP2pEnabled(false);
+                if(mActivity != null) mActivity.setIsWifiP2pEnabled(false);
+
+                if(activity != null) activity.setIsWifiP2pEnabled(false);
             }
          }
          //Call WiFiP2pManager.requestPeers() to get a list of current peers
@@ -46,6 +67,10 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                   //Toast.makeText(context,"mManager!=null ",Toast.LENGTH_SHORT).show();
                 }
 
+                if(manager != null){
+                    manager.requestPeers(channel, activity.peerListListener);
+                }
+
          }
          //Respond to new connection or disconnections
          else if(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)){
@@ -53,14 +78,31 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                  return;
              }
 
+             if(manager == null) return;
+
              NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
              if(networkInfo.isConnected()){
-                 mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
-                 mActivity.setIsWifiConnected(true);
+
+                 if(mActivity != null){
+                     mManager.requestConnectionInfo(mChannel, mActivity.connectionInfoListener);
+                     mActivity.setIsWifiConnected(true);
+                 }
+
+                 if(activity != null){
+                     manager.requestConnectionInfo(channel, activity.connectionInfoListener);
+                     activity.setIsWifiConnected(true);
+                 }
+
              }
              else{
-                 mActivity.setIsWifiConnected(false);
+                 if(mActivity != null){
+                     mActivity.setIsWifiConnected(false);
+                 }
+
+                 if(activity != null){
+                     activity.setIsWifiConnected(false);
+                 }
                  //mActivity.connectionStatus.setText("Device Disconnected");
              }
 

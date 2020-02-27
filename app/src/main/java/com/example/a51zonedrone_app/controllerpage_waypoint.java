@@ -1,6 +1,7 @@
 package com.example.a51zonedrone_app;
 
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -10,12 +11,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.os.StrictMode;
 import android.provider.Settings;
 import android.util.Log;
@@ -23,9 +26,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 import android.os.Bundle;
@@ -150,6 +155,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
 
+    static final int MESSAGE_READ = 1;
+
     //For WiFi Direct
     WifiManager wifiManager;
     WifiP2pManager mManager;
@@ -157,14 +164,17 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     ServerClass serverClass;
     SendReceive sendReceive;
     BroadcastReceiver mReceiver;
-    IntentFilter mIntentFilter;
+    IntentFilter mIntentFilter = new IntentFilter();
     List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>();
     String[] deviceNameArray; //Used to show device name in ListView
     WifiP2pDevice[] deviceArray; //Used to connect a Device
     private int seekbarval;
     private boolean isWifiP2pEnabled = false;
     private boolean isWifiConnected = false;
-    static final int MESSAGE_READ = 1;
+    private ListView listView;
+    private dronepage_on_flight drone;
+
+    ClientClass clientClass;
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
         this.isWifiP2pEnabled = isWifiP2pEnabled;
@@ -245,6 +255,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
         // This contains the MapView in XML and needs to be called after the access token is configured.
         setContentView(R.layout.activity_controllerpage_waypoint);
+
 
         if (android.os.Build.VERSION.SDK_INT > 9)
         {
@@ -367,6 +378,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                             String msg = seekbarval + allPoints.toString();
                             Log.d("TAG3",""+msg);
                             sendReceive.write(msg.getBytes());
+
                         } catch(Exception e){
                             Toast.makeText(getApplicationContext(), "Please try reconnecting. Reason: " + e.getMessage(), Toast.LENGTH_SHORT).show();
 
@@ -393,10 +405,9 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 Log.d("TAG1","NISUD" + i);
                 LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
                 distanceBetween = latLng.distanceTo(latlng2);
-                Toast.makeText(getApplicationContext(), "distanceBetween: "+distanceBetween, Toast.LENGTH_SHORT).show();
+
                 if (distanceBetween < SameThreshold) {
                     mapboxMap.removeMarker(marker.get(i).getMarker());
-                    Log.d("TAG2","wew" + i);
                     //TODO: Himoag array ang markers unya usaba ni nga part sa code
                     allPoints.get(i).setPass(true);
                     IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
@@ -535,6 +546,17 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                                         int which) {
                         mapboxMap.clear();
                         Toast.makeText(getApplicationContext(),"The drone will now return to the starting point",Toast.LENGTH_LONG).show();
+                        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+                            @Override
+                            public void onSuccess() {
+                                Toast.makeText(getApplicationContext(), "Disconnected", Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onFailure(int reason) {
+                                Toast.makeText(getApplicationContext(), "Still Connected", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                         controllerpage_waypoint.super.finish();
                     }
                 });
@@ -614,28 +636,64 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                     // not going to send us a result. We will be notified by
                     // WiFiDeviceBroadcastReceiver instead.
 
-                    startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                    //startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                    if(wifiManager.isWifiEnabled()){
+                        wifiManager.setWifiEnabled(false);
+                    }
+                    else{
+                        wifiManager.setWifiEnabled(true);
+                    }
                 } else {
                     //Log.e(TAG, "channel or manager is null");
                 }
                 return true;
+            case R.id.action_directDiscover:
+                mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    //Discovery started successfully
+                    public void onSuccess() {
+                        AlertDialog.Builder alertDialog = new AlertDialog.Builder(controllerpage_waypoint.this);
+                        alertDialog.setTitle("Connect to an available device:");
+
+                        View rowList = getLayoutInflater().inflate(R.layout.listview_list, null);
+                        listView = rowList.findViewById(R.id.listView);
+                        //adapter.notifyDataSetChanged();
+                        alertDialog.setView(rowList);
+                        AlertDialog dialog = alertDialog.create();
+                        dialog.show();
+
+                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(AdapterView<?> parent, View view, int i, long l) {
+                                final WifiP2pDevice device = deviceArray[i];
+                                WifiP2pConfig config = new WifiP2pConfig();
+                                config.deviceAddress = device.deviceAddress;
+                                //config.wps.setup = WpsInfo.PBC;
+
+                                mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+                                    @Override
+                                    public void onSuccess() {
+                                        Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onFailure(int reason) {
+                                        Toast.makeText(getApplicationContext(), "Not Connected", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    //Discovery not started
+                    @Override
+                    public void onFailure(int reason) {
+                    }
+                });
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
-
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
-        @Override
-        public void onConnectionInfoAvailable(WifiP2pInfo info) {
-            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-
-            if(info.groupFormed && info.isGroupOwner){
-                Log.d("TAG", "CONNECTED");
-                serverClass = new ServerClass();
-                serverClass.start();
-            }
-        }
-    };
 
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
@@ -655,12 +713,28 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 }
 
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
-                //listView.setAdapter(adapter);
+                if(adapter != null && listView != null) listView.setAdapter(adapter);
             }
 
             if(peers.size() == 0){
                 Toast.makeText(getApplicationContext(), "No Device Found", Toast.LENGTH_SHORT).show();
                 return;
+            }
+        }
+    };
+
+    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+        @Override
+        public void onConnectionInfoAvailable(WifiP2pInfo info) {
+            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
+
+            if(info.groupFormed && info.isGroupOwner){
+                serverClass = new ServerClass();
+                serverClass.run();
+            }
+            else if(info.groupFormed){
+                clientClass = new ClientClass(groupOwnerAddress);
+                clientClass.run();
             }
         }
     };
@@ -675,10 +749,33 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 serverSocket = new ServerSocket(8888);
                 socket = serverSocket.accept();
                 sendReceive = new SendReceive(socket);
+                Log.d("CHA", "CHARISSEMAot");
                 sendReceive.start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
+
+    public class ClientClass extends Thread{
+        Socket socket;
+        String hostAdd;
+
+        public ClientClass(InetAddress hostAddress){
+            hostAdd = hostAddress.getHostAddress();
+            socket = new Socket();
+        }
+
+        @Override
+        public void run() {
+            try {
+                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
+                sendReceive = new SendReceive(socket);
+                sendReceive.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }

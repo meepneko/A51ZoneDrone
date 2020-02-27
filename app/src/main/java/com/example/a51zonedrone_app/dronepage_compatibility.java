@@ -35,9 +35,6 @@ public class dronepage_compatibility extends AppCompatActivity {
 
     static final int MESSAGE_READ = 1;
 
-    ClientClass clientClass;
-    SendReceive sendReceive;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -91,96 +88,5 @@ public class dronepage_compatibility extends AppCompatActivity {
             }
         });
 
-    }
-
-    Handler handler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(@NonNull Message msg) {
-            switch(msg.what){
-                case MESSAGE_READ:
-                    byte[] readBuff = (byte[]) msg.obj;
-                    String tempMsg = new String(readBuff, 0, msg.arg1);
-                    break;
-            }
-            return true;
-        }
-    });
-
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
-        @Override
-        public void onConnectionInfoAvailable(WifiP2pInfo info) {
-            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-            if(info.groupFormed){
-                onConnect.setText("Drone");
-                clientClass = new ClientClass(groupOwnerAddress);
-                clientClass.start();
-            }
-        }
-    };
-
-    private class SendReceive extends Thread{
-        private Socket socket;
-        private InputStream inputStream;
-        private OutputStream outputStream;
-
-        public SendReceive(Socket skt){
-            socket = skt;
-            try {
-                inputStream = socket.getInputStream();
-                outputStream = socket.getOutputStream();
-
-                if(outputStream == null){
-                    outputStream = socket.getOutputStream();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void run() {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            while(socket != null){
-                try {
-                    bytes = inputStream.read(buffer);
-                    if(bytes > 0){
-                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        public void write(byte[] bytes){
-            try {
-                outputStream.write(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public class ClientClass extends Thread{
-        Socket socket;
-        String hostAdd;
-
-        public ClientClass(InetAddress hostAddress){
-            hostAdd = hostAddress.getHostAddress();
-            socket = new Socket();
-        }
-
-        @Override
-        public void run() {
-            try {
-                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
