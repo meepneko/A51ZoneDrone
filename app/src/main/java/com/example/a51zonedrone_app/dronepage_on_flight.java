@@ -11,6 +11,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.hardware.usb.UsbDevice;
 import android.location.Location;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -18,6 +23,7 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -71,10 +77,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Policy;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.StringTokenizer;
 
-public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener {
+import me.aflak.arduino.Arduino;
+import me.aflak.arduino.ArduinoListener;
+
+public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
+        SensorEventListener, ArduinoListener {
     private int altitude;
     private TextView receive;
     ClientClass clientClass;
@@ -87,6 +98,42 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private boolean isWifiP2pEnabled = false;
     private boolean isWifiConnected = false;
 
+    // System sensor manager instance.
+    private SensorManager sensorManager;
+    private final float[] accelerometerReading = new float[3];
+    private final float[] magnetometerReading = new float[3];
+    private final float[] rotationMatrix = new float[9];
+    private final float[] orientationAngles = new float[3];
+    private float[] or = new float[3];
+
+    //Instance of Arduino
+    //Uno R3 VID 0x2341&PID 0x0043
+    //Nano VID 0x1A86
+    private Arduino arduino;
+
+    //Averaging the sensors
+    private int count;
+    private float or1,or2,or3;
+    private float aveOr1,aveOr2,aveOr3;
+    private int limit;
+
+    //PID of sensors
+    float elapsedTime, time, timePrev;
+    private int pwm1,pwm2,pwm3,pwm4;
+    private float desire_angle;
+    private float kp;//3.55
+    private float ki;//0.005
+    private float kd;//2.05
+    private float throttle;
+
+    //PID
+    private float roll_previous_error,pitch_previous_error,yaw_previous_error;
+
+    String pwms;
+
+    private int ctr = 0;
+
+    private boolean wifiDirect = false;
 
     String[] deviceNameArray; //Used to show device name in ListView
     WifiP2pDevice[] deviceArray; //Used to connect a Device
@@ -122,6 +169,244 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     public void setIsWifiConnected(boolean isWifiConnected) {
         this.isWifiConnected = isWifiConnected;
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accelerometerReading,
+                    0, accelerometerReading.length);
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magnetometerReading,
+                    0, magnetometerReading.length);
+        }
+        updateOrientationAngles();
+    }
+
+    public void updateOrientationAngles() {
+        // Update rotation matrix, which iwww.wis needed to update orientation angles.
+        SensorManager.getRotationMatrix(rotationMatrix, null,
+                accelerometerReading, magnetometerReading);
+
+        // "mRotationMatrix" now has up-to-date information.
+        /*First calculate the error between the desired angle and
+         *the real measured angle*/
+        or = SensorManager.getOrientation(rotationMatrix, orientationAngles);
+        if (count < limit) {
+            //ROLL 4.70 to -4.70
+            //PITCH 2.34 to -2.34
+            or1 = (float)or[0];
+            or2 = (float)or[1];
+            or3 = (float)or[2];
+            aveOr1 += or1;
+            aveOr2 += or2;
+            aveOr3 += or3;
+            count++;
+        } else {
+            aveOr1 /= limit;
+            aveOr2 /= limit;
+            aveOr3 /= limit;
+            aveOr1 = Math.round(map(aveOr1,0,Math.PI,0,180)+180);
+            aveOr2 = Math.round(map(aveOr2,-Math.PI/2,Math.PI/2,-90,90));
+            aveOr3 =Math.round(map(aveOr3,-Math.PI,Math.PI,-180,180));
+            int[] allPWM = PWM(time, aveOr2, aveOr3,aveOr1,0,0);
+            pwm1 = allPWM[0];
+            pwm2 = allPWM[1];
+            pwm3 = allPWM[2];
+            pwm4 = allPWM[3];
+                /*First calculate the error between the desired angle and
+                  the real measured angle*/
+//            mTextSensorAzimuth.setText(String.format("%.2f", aveOr1));
+//            mTextSensorPitch.setText(String.format("%.2f", aveOr2));
+//            mTextSensorRoll.setText(String.format("%.2f", aveOr3));
+//            mPWM1.setText("" + pwm1);
+//            mPWM2.setText("" + pwm2);
+//            mPWM3.setText("" + pwm3);
+//            mPWM4.setText("" + pwm4);
+            aveOr1 = 0;
+            aveOr2 = 0;
+            aveOr3 = 0;
+            if (true) {
+                pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
+                arduino.send(pwms.getBytes());
+            }
+            count = 0;
+        }
+        // "mOrientationAngles" now has up-to-date information.
+    }
+
+    private int[] PWM(float time,float pitch,float roll,float yaw,int command,int whereToYawn)
+    {
+        float pitch_pid_i = 0,roll_pid_i = 0,yaw_pid_i = 0;
+        float timePrev = time;
+        float time1 = Calendar.getInstance().getTimeInMillis();
+
+        //float elapsedTime = (time1 - timePrev)/1000;
+        float elapsedTime = (time1 - timePrev)/1000000000;
+        elapsedTime = elapsedTime/10000;
+
+        Log.d("TAG11",""+elapsedTime);
+
+        float pitch_error = pitch - desire_angle;
+        //float pitch_error = 0;
+        float roll_error = roll - desire_angle;
+        //float roll_error = 0;
+
+        if(pitch<5&&pitch>-5)
+        {
+            pitch_error = 0;
+        }
+        if(roll<5&&roll>-5)
+        {
+            roll_error = 0;
+        }
+        //kailangan og desire angle
+        float yaw_error = yaw - whereToYawn;
+        if(yaw_error<5 && yaw_error>-5)
+        {
+            yaw_error = 0;
+        }
+
+        //PID_PROPRTIONAL
+        float pitch_pid_p = kp*pitch_error;
+        float roll_pid_p = kp*roll_error;
+        float yaw_pid_p = kp*yaw_error;
+
+        //PID_INTEGRAL
+        if(-10 < pitch_error && pitch_error < 10)
+        {
+            pitch_pid_i += ki*pitch_error;
+        }
+        if(-10 < roll_error && roll_error < 10)
+        {
+            roll_pid_i += ki*roll_error;
+        }
+        if(-10 < yaw_error && yaw_error < 10)
+        {
+            yaw_pid_i += ki*yaw_error;
+        }
+
+        //PID_DIFFERENTIAL
+        float pitch_pid_d = kd*((pitch_error - pitch_previous_error)/elapsedTime);
+        float roll_pid_d = kd*((roll_error - roll_previous_error)/elapsedTime);
+        float yaw_pid_d = kd*((yaw_error - roll_previous_error)/elapsedTime);
+
+        //     Log.d("TAG",""+pitch_pid_p+"/"+pitch_pid_i+"/"+(double)pitch_pid_d);
+
+        //all PID summation
+        float pitch_PID = pitch_pid_p + pitch_pid_i + pitch_pid_d;
+        float roll_PID = roll_pid_p + roll_pid_i + roll_pid_d;
+        float yaw_PID = yaw_pid_p + yaw_pid_i + yaw_pid_d;
+
+        if(pitch_PID < -1000)
+        {
+            pitch_PID = -1000;
+        }
+        else if(pitch_PID > 1000)
+        {
+            pitch_PID = 1000;
+        }
+        if(roll_PID < -1000)
+        {
+            roll_PID = -1000;
+        }
+        else if(roll_PID > 1000)
+        {
+            roll_PID = 1000;
+        }
+        if(yaw_PID < -1000)
+        {
+            yaw_PID = -1000;
+        }
+        else if(yaw_PID > 1000)
+        {
+            yaw_PID = 1000;
+        }
+        float pwm1 = throttle + pitch_PID - roll_PID - yaw_PID;
+        float pwm2 = throttle - pitch_PID - roll_PID + yaw_PID;
+        float pwm3 = throttle - pitch_PID + roll_PID - yaw_PID;
+        float pwm4 = throttle + pitch_PID + roll_PID + yaw_PID;
+        if(pwm1 < 1000)
+        {
+            pwm1 = 1000;
+        }
+        if(pwm1 > 2000)
+        {
+            pwm1 = 2000;
+        }
+        if(pwm2 < 1000)
+        {
+            pwm2 = 1000;
+        }
+        if(pwm2 > 2000)
+        {
+            pwm2 = 2000;
+        }
+        if(pwm3 < 1000)
+        {
+            pwm3 = 1000;
+        }
+        if(pwm3 > 2000)
+        {
+            pwm3 = 2000;
+        }
+        if(pwm4 < 1000)
+        {
+            pwm4 = 1000;
+        }
+        if(pwm4 > 2000)
+        {
+            pwm4 = 2000;
+        }
+        pwm1 = (float) map(pwm1,1000,2000,1000,1987);
+        pwm2 = (float) map(pwm2,1000,2000,1000,1977);
+        pwm3 = (float) map(pwm3,1000,2000,1000,1994);
+        yaw_previous_error = yaw_error;
+        pitch_previous_error = pitch_error;
+        roll_previous_error = roll_error;
+        return (new int[]{(int) pwm1,(int)pwm2,(int)pwm3,(int)pwm4});
+    }
+
+    private double map(double x, double in_min, double in_max, double out_min, double out_max) {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    @Override
+    public void onArduinoAttached(UsbDevice device) {
+    //    display("Arduino attached!");
+        arduino.open(device);
+    }
+
+    @Override
+    public void onArduinoDetached() {
+       // display("Arduino detached");
+    }
+
+    @Override
+    public void onArduinoMessage(byte[] bytes)
+    {
+        //display("> "+new String(bytes));
+    }
+
+    @Override
+    public void onArduinoOpened() {
+        Toast.makeText(this,"onArduino ",Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onUsbPermissionDenied() {
+        // Permission denied, display popup then
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                arduino.reopen();
+            }
+        }, 3000);
     }
 
     private class dronepage_on_flightLocationCallback
@@ -189,6 +474,40 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.access_token));
+
+        //Instantiate Sensor
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
+        SensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+        //Instantiate Arduino
+        arduino = new Arduino(this);
+        arduino.addVendorId(0x2341);
+        arduino.addVendorId (0x1A86);
+        arduino.setBaudRate(9600);
+
+        elapsedTime = timePrev = 0;
+        aveOr1 = aveOr2 = aveOr3 = 0;
+        or1 = or2 = or3 = 0;
+        count = 0;
+        limit = 3;
+
+        //PID
+        //pitch_pid_d = pitch_pid_i = pitch_pid_d = roll_pid_p =roll_pid_i = roll_pid_d = 0;
+        //roll_PID = roll_error = roll_previous_error = pitch_PID = pitch_error = pitch_previous_error = 0;
+        time = 0;
+        kp = (float) 3.55;
+        ki = (float) 0.005;
+        kd = (float) 2.05;
+        pwm1 = pwm2 = pwm3 = pwm4 = 1000;
+        desire_angle = 0;
+        roll_previous_error = 0;
+        pitch_previous_error = 0;
+        yaw_previous_error = 0;
+        throttle = 1200;
+        pwms = "1000100010001000";
+
         setContentView(R.layout.activity_dronepage_on_flight);
         locBttn = findViewById(R.id.currLocationBttn);
         receive = findViewById(R.id.txt_receive);
@@ -199,6 +518,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
         try {
             //receive.setText(String.valueOf(sendReceive.getReceive()));
+
 
             StringTokenizer tokens = new StringTokenizer(receive.getText().toString(), "[");
             altitude = Integer.parseInt(tokens.nextToken());
@@ -290,6 +610,29 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             mapboxMap.addMarker(markerOptions);
             checker = true;
         }
+//        if(wifiDirect)
+//        {
+//            double SameThreshold = 17.5;
+//            for (int i = ctr; i < allPoints.size(); i++) {
+//                LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
+//                distanceBetween = latLng.distanceTo(latlng2);
+//                Toast.makeText(getApplicationContext(),"!"+distanceBetween,Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getApplicationContext(),"@"+LatLong.computeAngleBetween(latLng,latlng2),Toast.LENGTH_SHORT).show();
+//
+//                if (distanceBetween < SameThreshold) {
+//                    mapboxMap.removeMarker(marker.get(i).getMarker());
+//                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
+//                    allPoints.get(i).setPass(true);
+//                    IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
+//                    Icon icon = iconFactory.fromResource(R.drawable.check_marker);
+//                    marker.set(i, new MarkerOptions().title(i + ", Status: " + allPoints.get(i).getPass()));
+//                    marker.get(i).setIcon(icon).position(allPoints.get(i).getLatlng());
+//                    mapboxMap.addMarker(marker.get(i));
+//                    ctr = i;
+//                    break;
+//                }
+//            }
+//        }
     }
 
     /**
@@ -497,6 +840,25 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
         mapView.onResume();
+        // Get updates from the accelerometer and magnetometer at a constant rate.
+        // To make batch operations more efficient and reduce power consumption,
+        // provide support for delaying updates to the application.
+        //
+        // In this example, the sensor reporting delay is small enough such that
+        // the application receives an update before the system checks the sensor
+        // readings again.
+        Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (accelerometer != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                sensorManager.registerListener((SensorEventListener) this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+            }
+        }
+        Sensor magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        if (magneticField != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                sensorManager.registerListener((SensorEventListener) this, magneticField, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+            }
+        }
     }
 
     @Override
@@ -504,12 +866,15 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         super.onPause();
         unregisterReceiver(mReceiver);
         mapView.onPause();
+        // Don't receive any more updates from either sensor.
+        sensorManager.unregisterListener((SensorEventListener) this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         mapView.onStart();
+        arduino.setArduinoListener(this);
     }
 
     @Override
@@ -528,6 +893,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     protected void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+        arduino.unsetArduinoListener();
+        arduino.close();
     }
 
     @Override
@@ -585,6 +952,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         static final int MESSAGE_READ = 1;
 
         public String getReceive(){
+            wifiDirect = true;
             return receive;
         }
 
