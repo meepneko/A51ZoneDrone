@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -27,6 +28,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,6 +43,10 @@ import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -53,6 +59,7 @@ import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
+import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,8 +69,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Policy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener {
     private int altitude;
@@ -86,6 +95,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     static final int MESSAGE_READ = 1;
 
     //For the map
+    private ImageButton locBttn;
     private static final String SOURCE_ID = "SOURCE_ID";
     private static final String ICON_ID = "ICON_ID";
     private static final String LAYER_ID = "LAYER_ID";
@@ -97,6 +107,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private dronepage_on_flightLocationCallback callback = new dronepage_on_flightLocationCallback(this);
     private static double latitude, longitude;
+    private List<LatLong> receivedWaypoints;
+    private boolean checker = false;
+    private List<MarkerOptions> marker = new ArrayList<>();
+    private MarkerOptions markerOptions = new MarkerOptions();
+    private List<LatLng> directionPoint = new ArrayList<>();
+    private LineOptions lineOptions = new LineOptions();
+    private LineManager lineManager;
 
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
@@ -131,7 +148,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     latitude = location.getLatitude();
                     longitude = location.getLongitude();
 
-                    //UpdateUI(latitude, longitude);
+                    UpdateUI(latitude, longitude);
 
                     if (location == null) {
                         return;
@@ -141,9 +158,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 }
 
                 // Create a Toast which displays the new location's coordinates
-                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
-                        String.valueOf(latitude), String.valueOf(longitude)),
-                        Toast.LENGTH_SHORT).show();
+//                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
+//                        String.valueOf(latitude), String.valueOf(longitude)),
+//                        Toast.LENGTH_SHORT).show();
 
                 // Pass the new location to the Maps SDK's LocationComponent
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
@@ -173,17 +190,47 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_dronepage_on_flight);
+        locBttn = findViewById(R.id.currLocationBttn);
         receive = findViewById(R.id.txt_receive);
 
         mapView = findViewById(R.id.mapView_drone);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-       //Bundle b = getIntent().getExtras();
-        //altitude = b.getInt("altitude");
-
         try {
-            receive.setText(String.valueOf(sendReceive.getReceive()));
+            //receive.setText(String.valueOf(sendReceive.getReceive()));
+
+            StringTokenizer tokens = new StringTokenizer(receive.getText().toString(), "[");
+            altitude = Integer.parseInt(tokens.nextToken());
+
+            String[] latlngParts = tokens.nextToken().split("\\],\\[");
+
+            for (String ll: latlngParts) {
+                String llReplaced = ll.replaceAll("\\[", "").replaceAll("\\]", "");
+                String[] llReplacedParts = llReplaced.split(",");
+
+                receivedWaypoints.add(new LatLong(Double.parseDouble(llReplacedParts[0]), Double.parseDouble(llReplacedParts[1]), Boolean.parseBoolean(llReplacedParts[2])));
+            }
+
+            receive.setText(receivedWaypoints.toString());
+
+            Toast.makeText(getApplicationContext(), altitude + " " + receivedWaypoints.size(), Toast.LENGTH_SHORT).show();
+
+            directionPoint.add(new LatLng(latitude, longitude));
+
+            IconFactory iconFactory = IconFactory.getInstance(this);
+            Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
+
+            int index = 0;
+            for (LatLong i: receivedWaypoints){
+                marker.add(index,new MarkerOptions().title(index + "")
+                        .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
+                        .setIcon(icon));
+                mapboxMap.addMarker(marker.get(index));
+
+                directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
+                index++;
+            }
         } catch(Exception e){
             Toast.makeText(getApplicationContext(), "NULL", Toast.LENGTH_SHORT).show();
         }
@@ -206,6 +253,12 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
+        locBttn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                animateCamera(new LatLng(latitude, longitude));
+            }
+        });
     }
 
     @Override
@@ -227,6 +280,16 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 Point.fromLngLat(-54.14164, -33.981818)));
         symbolLayerIconFeatureList.add(Feature.fromGeometry(
                 Point.fromLngLat(-56.990533, -30.583266)));
+    }
+
+    public void UpdateUI(double lat, double lon){
+        LatLng latLng = new LatLng(lat, lon);
+
+        if(!checker){
+            MarkerOptions markerOptions = new MarkerOptions().position(latLng);
+            mapboxMap.addMarker(markerOptions);
+            checker = true;
+        }
     }
 
     /**

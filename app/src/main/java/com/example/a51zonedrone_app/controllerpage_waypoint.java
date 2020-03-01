@@ -133,7 +133,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private List<MarkerOptions> marker = new ArrayList<>();
     private MarkerOptions markerOptions = new MarkerOptions();
     private PolygonOptions poly = new PolygonOptions();
-    private PolylineOptions polyl = new PolylineOptions();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
 
@@ -198,9 +197,9 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 }
 
                 // Create a Toast which displays the new location's coordinates
-                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
-                        String.valueOf(latitude), String.valueOf(longitude)),
-                        Toast.LENGTH_SHORT).show();
+//                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
+//                        String.valueOf(latitude), String.valueOf(longitude)),
+//                        Toast.LENGTH_SHORT).show();
 
                 // Pass the new location to the Maps SDK's LocationComponent
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {

@@ -78,7 +78,7 @@ public class dronepage_compatibility extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkAC == true && checkMA == true) {
+                if(checkAC == true /*&& checkMA == true*/) {
                     Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
                     startActivity(startIntent);
                 }

@@ -14,6 +14,12 @@ public class LatLong {
         pass = false;
     }
 
+    public LatLong(double lat, double lon, boolean p){
+        latitude = lat;
+        longitude = lon;
+        pass = p;
+    }
+
     // Getter latlng
     public LatLng getLatlng() {
         return latlng;
@@ -54,6 +60,6 @@ public class LatLong {
     @Override
     public String toString()
     {
-        return (this.latitude+"/"+this.longitude+"/"+this.pass);
+        return ("["+this.latitude+","+this.longitude+","+this.pass+"]");
     }
 }
