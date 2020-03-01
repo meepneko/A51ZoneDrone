@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.graphics.Shader;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -66,6 +67,9 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
 import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
+import com.mapbox.mapboxsdk.style.layers.LineLayer;
+import com.mapbox.mapboxsdk.style.layers.Property;
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,6 +101,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>();
     private boolean isWifiP2pEnabled = false;
     private boolean isWifiConnected = false;
+    private String receivedString;
 
     // System sensor manager instance.
     private SensorManager sensorManager;
@@ -154,13 +159,14 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
     private dronepage_on_flightLocationCallback callback = new dronepage_on_flightLocationCallback(this);
     private static double latitude, longitude;
-    private List<LatLong> receivedWaypoints;
+    private List<LatLong> receivedWaypoints = new ArrayList<>();
     private boolean checker = false;
     private List<MarkerOptions> marker = new ArrayList<>();
     private MarkerOptions markerOptions = new MarkerOptions();
     private List<LatLng> directionPoint = new ArrayList<>();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
+    private boolean isOneWifiDirect = false;
 
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
@@ -179,6 +185,40 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             System.arraycopy(event.values, 0, magnetometerReading,
                     0, magnetometerReading.length);
+        }
+        if(wifiDirect) {
+            int i = 0;
+            StringTokenizer tokens = new StringTokenizer(receivedString, ":");
+            altitude = Integer.parseInt(tokens.nextToken());
+
+            String[] latlngParts = tokens.nextToken().split("\\],\\[");
+            String llReplaced = latlngParts[0].replaceAll("\\[", "").replaceAll("\\]", "");
+            String[] llReplacedParts = llReplaced.split(", ");
+            for (String ll : llReplacedParts) {
+                String[] tok = llReplacedParts[i].split(",");
+                i++;
+                receivedWaypoints.add(new LatLong(Double.parseDouble(tok[0]), Double.parseDouble(tok[1]), Boolean.parseBoolean(tok[2])));
+            }
+
+            directionPoint.add(new LatLng(latitude, longitude));
+
+            IconFactory iconFactory = IconFactory.getInstance(this);
+            Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
+
+            for (int index = 0; index < receivedWaypoints.size(); index++) {
+                marker.add(index, new MarkerOptions().title(index + "")
+                        .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
+                        .setIcon(icon));
+                mapboxMap.addMarker(marker.get(index));
+
+                directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
+            }
+
+            directionPoint.add(new LatLng(latitude, longitude));
+
+            lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
+            lineManager.create(lineOptions);
+            wifiDirect = false;
         }
         updateOrientationAngles();
     }
@@ -244,8 +284,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         //float elapsedTime = (time1 - timePrev)/1000;
         float elapsedTime = (time1 - timePrev)/1000000000;
         elapsedTime = elapsedTime/10000;
-
-        Log.d("TAG11",""+elapsedTime);
 
         float pitch_error = pitch - desire_angle;
         //float pitch_error = 0;
@@ -516,45 +554,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        try {
-            //receive.setText(String.valueOf(sendReceive.getReceive()));
-
-
-            StringTokenizer tokens = new StringTokenizer(receive.getText().toString(), "[");
-            altitude = Integer.parseInt(tokens.nextToken());
-
-            String[] latlngParts = tokens.nextToken().split("\\],\\[");
-
-            for (String ll: latlngParts) {
-                String llReplaced = ll.replaceAll("\\[", "").replaceAll("\\]", "");
-                String[] llReplacedParts = llReplaced.split(",");
-
-                receivedWaypoints.add(new LatLong(Double.parseDouble(llReplacedParts[0]), Double.parseDouble(llReplacedParts[1]), Boolean.parseBoolean(llReplacedParts[2])));
-            }
-
-            receive.setText(receivedWaypoints.toString());
-
-            Toast.makeText(getApplicationContext(), altitude + " " + receivedWaypoints.size(), Toast.LENGTH_SHORT).show();
-
-            directionPoint.add(new LatLng(latitude, longitude));
-
-            IconFactory iconFactory = IconFactory.getInstance(this);
-            Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
-
-            int index = 0;
-            for (LatLong i: receivedWaypoints){
-                marker.add(index,new MarkerOptions().title(index + "")
-                        .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
-                        .setIcon(icon));
-                mapboxMap.addMarker(marker.get(index));
-
-                directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
-                index++;
-            }
-        } catch(Exception e){
-            Toast.makeText(getApplicationContext(), "NULL", Toast.LENGTH_SHORT).show();
-        }
-
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
 
@@ -590,6 +589,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     @Override
                     public void onStyleLoaded(@NonNull Style style) {
                         enableLocationComponent(style);
+
+                        lineManager = new LineManager(mapView, mapboxMap, style);
                     }
                 });
 
@@ -910,7 +911,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 case MESSAGE_READ:
                     byte[] readBuff = (byte[]) msg.obj;
                     String tempMsg = new String(readBuff, 0, msg.arg1);
-                    receive.setText(tempMsg);
+                    receivedString = tempMsg;
+                    receive.setText(receivedString);
+                    isOneWifiDirect = true;
+                    wifiDirect = true;
                     break;
             }
             return true;
@@ -952,7 +956,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         static final int MESSAGE_READ = 1;
 
         public String getReceive(){
-            wifiDirect = true;
             return receive;
         }
 

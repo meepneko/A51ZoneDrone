@@ -348,7 +348,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                         }
 
                         try {
-                            String msg = seekbarval + allPoints.toString();
+                            String msg = seekbarval + ":" + allPoints.toString();
                             Log.d("TAG3","" + msg);
                             sendReceive.write(msg.getBytes());
                         } catch(Exception e){
