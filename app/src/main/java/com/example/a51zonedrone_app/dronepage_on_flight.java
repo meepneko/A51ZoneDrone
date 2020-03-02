@@ -74,6 +74,7 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -90,8 +91,19 @@ import me.aflak.arduino.ArduinoListener;
 
 public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
         SensorEventListener, ArduinoListener {
-    private int altitude;
+
+    //altitude
+    private float altitude = 0;
+    private float target_altitude = 0;
+    private float alt_prev_error;
+    private float alt_pid = 0;
+    private float alt_error = 0;
+
+    //yaw
+    private int whereToYawn = 0;
+
     private TextView receive;
+    private TextView tv;
     ClientClass clientClass;
     SendReceive sendReceive;
     WifiManager wifiManager;
@@ -136,9 +148,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     String pwms;
 
-    private int ctr = 0;
+    private int i = 0;
 
-    private boolean wifiDirect = false;
+    private int wifiDirect = 0;
 
     String[] deviceNameArray; //Used to show device name in ListView
     WifiP2pDevice[] deviceArray; //Used to connect a Device
@@ -166,7 +178,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private List<LatLng> directionPoint = new ArrayList<>();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
-    private boolean isOneWifiDirect = false;
 
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
@@ -186,10 +197,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             System.arraycopy(event.values, 0, magnetometerReading,
                     0, magnetometerReading.length);
         }
-        if(wifiDirect) {
+        if(wifiDirect == 1) {
             int i = 0;
             StringTokenizer tokens = new StringTokenizer(receivedString, ":");
-            altitude = Integer.parseInt(tokens.nextToken());
+            target_altitude = Integer.parseInt(tokens.nextToken());
 
             String[] latlngParts = tokens.nextToken().split("\\],\\[");
             String llReplaced = latlngParts[0].replaceAll("\\[", "").replaceAll("\\]", "");
@@ -218,7 +229,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
             lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
             lineManager.create(lineOptions);
-            wifiDirect = false;
+            wifiDirect = 2;
         }
         updateOrientationAngles();
     }
@@ -249,34 +260,84 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             aveOr1 = Math.round(map(aveOr1,0,Math.PI,0,180)+180);
             aveOr2 = Math.round(map(aveOr2,-Math.PI/2,Math.PI/2,-90,90));
             aveOr3 =Math.round(map(aveOr3,-Math.PI,Math.PI,-180,180));
-            int[] allPWM = PWM(time, aveOr2, aveOr3,aveOr1,0,0);
+            altPID(time,altitude,target_altitude);
+            int[] allPWM = PWM(time, aveOr2, aveOr3,aveOr1,whereToYawn);
             pwm1 = allPWM[0];
             pwm2 = allPWM[1];
             pwm3 = allPWM[2];
             pwm4 = allPWM[3];
                 /*First calculate the error between the desired angle and
                   the real measured angle*/
-//            mTextSensorAzimuth.setText(String.format("%.2f", aveOr1));
-//            mTextSensorPitch.setText(String.format("%.2f", aveOr2));
-//            mTextSensorRoll.setText(String.format("%.2f", aveOr3));
-//            mPWM1.setText("" + pwm1);
-//            mPWM2.setText("" + pwm2);
-//            mPWM3.setText("" + pwm3);
-//            mPWM4.setText("" + pwm4);
             aveOr1 = 0;
             aveOr2 = 0;
             aveOr3 = 0;
-            if (true) {
+            if (wifiDirect == 2) {
                 pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
                 arduino.send(pwms.getBytes());
+//                LatLng latLng = new LatLng(latitude, longitude);
+//                double SameThreshold = 17.5;
+//                double distanceBetween = 0;
+//                LatLng latlng2 = new LatLng(receivedWaypoints.get(i).getLatlng().getLatitude(), receivedWaypoints.get(i).getLatlng().getLongitude());
+//                distanceBetween = latLng.distanceTo(latlng2);
+//                whereToYawn = (int)LatLong.computeAngleBetween(latLng,latlng2);
+//
+//                if (distanceBetween < SameThreshold) {
+//                    mapboxMap.removeMarker(marker.get(i).getMarker());
+//                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
+//                    receivedWaypoints.get(i).setPass(true);
+//                    IconFactory iconFactory = IconFactory.getInstance(dronepage_on_flight.this);
+//                    Icon icon = iconFactory.fromResource(R.drawable.check_marker);
+//                    marker.set(i, new MarkerOptions().title(i + ", Status: " + receivedWaypoints.get(i).getPass()));
+//                    marker.get(i).setIcon(icon).position(receivedWaypoints.get(i).getLatlng());
+//                    mapboxMap.addMarker(marker.get(i));
+//                    i++;
+//                }
             }
+//            else if(wifiDirect ==3)
+//            {
+//                pwms = "1100110011001100";
+//                arduino.send(pwms.getBytes());
+//            }
             count = 0;
         }
         // "mOrientationAngles" now has up-to-date information.
     }
+    private void altPID(float time,float altitude,float target_alt){
+        kp = (float) 10.80;
+        ki = (float) 0.048;
+        kd = (float) 2.5;
+        float alt_p=0,alt_i=0,alt_d=0;
+        float timePrev = time;
+        float time1 = Calendar.getInstance().getTimeInMillis();
 
-    private int[] PWM(float time,float pitch,float roll,float yaw,int command,int whereToYawn)
+        elapsedTime = (time1 - timePrev)/1000000000;
+        elapsedTime = (elapsedTime/10000);
+
+        alt_error = target_alt - altitude;
+        if(alt_error<.5&&alt_error>-.5)
+        {
+            alt_error = 0;
+        }
+        alt_p = kp*alt_error;
+        if(-3 < alt_error && alt_error < 3){alt_i += ki*alt_error;}
+        alt_d = kd*((alt_error - alt_prev_error)/elapsedTime);
+        alt_prev_error = alt_error;
+        alt_pid= (int) (alt_p+alt_i+alt_d);
+
+        if(alt_pid < -1000)
+        {
+            alt_pid=-1000;
+        }
+        if(alt_pid > 1000)
+        {
+            alt_pid=1000;
+        }
+    }
+    private int[] PWM(float time,float pitch,float roll,float yaw,int whereToYawn)
     {
+        kp = (float) 3.55;
+        ki = (float) 0.005;
+        kd = (float) 2.05;
         float pitch_pid_i = 0,roll_pid_i = 0,yaw_pid_i = 0;
         float timePrev = time;
         float time1 = Calendar.getInstance().getTimeInMillis();
@@ -285,11 +346,12 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         float elapsedTime = (time1 - timePrev)/1000000000;
         elapsedTime = elapsedTime/10000;
 
-        float pitch_error = pitch - desire_angle;
+        float pitch_error = 0;
         //float pitch_error = 0;
         float roll_error = roll - desire_angle;
         //float roll_error = 0;
-
+        //kailangan og desire angle
+        float yaw_error = yaw - whereToYawn;
         if(pitch<5&&pitch>-5)
         {
             pitch_error = 0;
@@ -298,11 +360,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             roll_error = 0;
         }
-        //kailangan og desire angle
-        float yaw_error = yaw - whereToYawn;
         if(yaw_error<5 && yaw_error>-5)
         {
             yaw_error = 0;
+            pitch_error= pitch - 20;
+        }
+        else {
+            pitch_error = pitch - desire_angle;
         }
 
         //PID_PROPRTIONAL
@@ -323,13 +387,15 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             yaw_pid_i += ki*yaw_error;
         }
+        if(-10 < yaw_error && yaw_error < 10)
+        {
+            yaw_pid_i += ki*yaw_error;
+        }
 
         //PID_DIFFERENTIAL
         float pitch_pid_d = kd*((pitch_error - pitch_previous_error)/elapsedTime);
         float roll_pid_d = kd*((roll_error - roll_previous_error)/elapsedTime);
-        float yaw_pid_d = kd*((yaw_error - roll_previous_error)/elapsedTime);
-
-        //     Log.d("TAG",""+pitch_pid_p+"/"+pitch_pid_i+"/"+(double)pitch_pid_d);
+        float yaw_pid_d = kd*((yaw_error - yaw_previous_error)/elapsedTime);
 
         //all PID summation
         float pitch_PID = pitch_pid_p + pitch_pid_i + pitch_pid_d;
@@ -360,10 +426,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             yaw_PID = 1000;
         }
-        float pwm1 = throttle + pitch_PID - roll_PID - yaw_PID;
-        float pwm2 = throttle - pitch_PID - roll_PID + yaw_PID;
-        float pwm3 = throttle - pitch_PID + roll_PID - yaw_PID;
-        float pwm4 = throttle + pitch_PID + roll_PID + yaw_PID;
+        float pwm1 = throttle + pitch_PID - roll_PID /*- yaw_PID+alt_pid*/;
+        float pwm2 = throttle - pitch_PID - roll_PID /*+ yaw_PID+alt_pid*/;
+        float pwm3 = throttle - pitch_PID + roll_PID /*- yaw_PID+alt_pid*/;
+        float pwm4 = throttle + pitch_PID + roll_PID /*+ yaw_PID+alt_pid*/;
         if(pwm1 < 1000)
         {
             pwm1 = 1000;
@@ -416,19 +482,28 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     @Override
     public void onArduinoAttached(UsbDevice device) {
-    //    display("Arduino attached!");
+        display("Arduino attached!");
         arduino.open(device);
     }
 
     @Override
     public void onArduinoDetached() {
-       // display("Arduino detached");
+        display("Arduino detached");
     }
 
     @Override
     public void onArduinoMessage(byte[] bytes)
     {
-        //display("> "+new String(bytes));
+        altitude=Float.parseFloat(new String(bytes));
+        try {
+            display("> "+new String(bytes,"UTF-8") +"PID:"+alt_pid);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }}
+
+    public void display(String message) {
+
+        runOnUiThread(() -> tv.setText(message + "\n"));
     }
 
     @Override
@@ -549,6 +624,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         setContentView(R.layout.activity_dronepage_on_flight);
         locBttn = findViewById(R.id.currLocationBttn);
         receive = findViewById(R.id.txt_receive);
+        tv = findViewById(R.id.tv);
 
         mapView = findViewById(R.id.mapView_drone);
         mapView.onCreate(savedInstanceState);
@@ -913,8 +989,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     String tempMsg = new String(readBuff, 0, msg.arg1);
                     receivedString = tempMsg;
                     receive.setText(receivedString);
-                    isOneWifiDirect = true;
-                    wifiDirect = true;
+                    if(receivedString != null) {
+                        wifiDirect = 1;
+                    }
+                    else if(wifiDirect == 2)
+                    {
+                        wifiDirect = 3;
+                    }
                     break;
             }
             return true;
