@@ -37,7 +37,7 @@ public class controllerpage_setaltitude extends AppCompatActivity {
 
     private void initialize() {
         mySeekbar= findViewById(R.id.seekBar);
-        seekBarvalue = mySeekbar.getProgress() * 10;
+        seekBarvalue = mySeekbar.getProgress() * 2;
         mySeekbar.setOnSeekBarChangeListener(seekBarChangeListener);
         Tvalt=findViewById(R.id.Altitude_textView);
         Btnnext = findViewById(R.id.button_next);
@@ -48,7 +48,7 @@ public class controllerpage_setaltitude extends AppCompatActivity {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
             // updated continuously as the user slides the thumb
-            seekBarvalue = progress * 10;
+            seekBarvalue = progress * 2;
             Tvalt.setText("Altitude: "+ seekBarvalue +"m");
             Log.d("Check", "Altitude "+progress);
 
