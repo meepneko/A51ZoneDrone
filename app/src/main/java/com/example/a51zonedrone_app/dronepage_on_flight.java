@@ -104,8 +104,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     private TextView receive;
     private TextView tv;
-    ClientClass clientClass;
-    SendReceive sendReceive;
+//    ClientClass clientClass;
+//    SendReceive sendReceive;
     WifiManager wifiManager;
     WifiP2pManager mManager;
     BroadcastReceiver mReceiver;
@@ -114,6 +114,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private boolean isWifiP2pEnabled = false;
     private boolean isWifiConnected = false;
     private String receivedString;
+    static Handler handler;
 
     // System sensor manager instance.
     private SensorManager sensorManager;
@@ -178,6 +179,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private List<LatLng> directionPoint = new ArrayList<>();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
+    static public Server_Side_Thread serverSideThread;
+    static public Client_Thread clientThread;
+    static public SendReceiveThread sendReceiveThread;
 
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
@@ -274,30 +278,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             if (wifiDirect == 2) {
                 pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
                 arduino.send(pwms.getBytes());
-//                LatLng latLng = new LatLng(latitude, longitude);
-//                double SameThreshold = 17.5;
-//                double distanceBetween = 0;
-//                LatLng latlng2 = new LatLng(receivedWaypoints.get(i).getLatlng().getLatitude(), receivedWaypoints.get(i).getLatlng().getLongitude());
-//                distanceBetween = latLng.distanceTo(latlng2);
-//                whereToYawn = (int)LatLong.computeAngleBetween(latLng,latlng2);
-//
-//                if (distanceBetween < SameThreshold) {
-//                    mapboxMap.removeMarker(marker.get(i).getMarker());
-//                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
-//                    receivedWaypoints.get(i).setPass(true);
-//                    IconFactory iconFactory = IconFactory.getInstance(dronepage_on_flight.this);
-//                    Icon icon = iconFactory.fromResource(R.drawable.check_marker);
-//                    marker.set(i, new MarkerOptions().title(i + ", Status: " + receivedWaypoints.get(i).getPass()));
-//                    marker.get(i).setIcon(icon).position(receivedWaypoints.get(i).getLatlng());
-//                    mapboxMap.addMarker(marker.get(i));
-//                    i++;
-//                }
             }
-//            else if(wifiDirect ==3)
-//            {
-//                pwms = "1100110011001100";
-//                arduino.send(pwms.getBytes());
-//            }
             count = 0;
         }
         // "mOrientationAngles" now has up-to-date information.
@@ -640,13 +621,35 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         //Most p2p operations require a Channel as an argument
         mChannel = mManager.initialize(this, getMainLooper(), null);
 
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
+        //mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
 
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+
+        handler = new Handler(new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                if (msg.what == 1) {
+                    byte[] readBuff = (byte[]) msg.obj;
+                    String temp = new String(readBuff, 0, msg.arg1);
+                    receivedString = temp;
+                    receive.setText(receivedString);
+                    if(wifiDirect == 0 && temp != null) {
+                        wifiDirect = 1;
+                    }
+                    else if(wifiDirect == 2 && receivedString == "stop")
+                    {
+                        wifiDirect = 3;
+                        receive.setText(receivedString);
+                    }
+                    temp = null;
+                }
+                return true;
+            }
+        });
 
         locBttn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -902,12 +905,23 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
-            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-
-            if(info.groupFormed){
-                clientClass = new ClientClass(groupOwnerAddress);
-                clientClass.start();
+            InetAddress inetAddress = info.groupOwnerAddress;
+            if (info.groupFormed && info.isGroupOwner) {
+                //constate.setText("Host");
+                Log.d("Reached", " Here 1");
+                serverSideThread = new Server_Side_Thread();
+                serverSideThread.start();
+                //Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+                //startActivity(intent);
+            } else if (info.groupFormed) {
+                //constate.setText("Client");
+                Log.d("Reached", " Here 2");
+                clientThread = new Client_Thread(inetAddress);
+                clientThread.start();
+                //Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+                //startActivity(intent);
             }
+
         }
     };
 
@@ -969,6 +983,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        controllerpage_waypoint.sendReceiveThread = null;
+        controllerpage_waypoint.clientThread = null;
+        controllerpage_waypoint.serverSideThread = null;
         mapView.onDestroy();
         arduino.unsetArduinoListener();
         arduino.close();
@@ -980,96 +997,97 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         mapView.onSaveInstanceState(outState);
     }
 
-    Handler handler = new Handler(new Handler.Callback() {
-        @Override
-        public boolean handleMessage(@NonNull Message msg) {
-            switch(msg.what){
-                case MESSAGE_READ:
-                    byte[] readBuff = (byte[]) msg.obj;
-                    String tempMsg = new String(readBuff, 0, msg.arg1);
-                    receivedString = tempMsg;
-                    receive.setText(receivedString);
-                    if(receivedString != null) {
-                        wifiDirect = 1;
-                    }
-                    else if(wifiDirect == 2)
-                    {
-                        wifiDirect = 3;
-                    }
-                    break;
-            }
-            return true;
-        }
-    });
+//    Handler handler = new Handler(new Handler.Callback() {
+//        @Override
+//        public boolean handleMessage(@NonNull Message msg) {
+//            switch(msg.what){
+//                case MESSAGE_READ:
+//                    byte[] readBuff = (byte[]) msg.obj;
+//                    String tempMsg = new String(readBuff, 0, msg.arg1);
+//                    receivedString = tempMsg;
+//                    receive.setText(receivedString);
+//                    if(tempMsg != null) {
+//                        wifiDirect = 1;
+//                    }
+//                    else if(wifiDirect == 2 && tempMsg != null)
+//                    {
+//                        wifiDirect = 3;
+//                    }
+//                    tempMsg = null;
+//                    break;
+//            }
+//            return true;
+//        }
+//    });
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
 
-    public class ClientClass extends Thread{
-        Socket socket;
-        String hostAdd;
-
-        public ClientClass(InetAddress hostAddress){
-            hostAdd = hostAddress.getHostAddress();
-            socket = new Socket();
-        }
-
-        @Override
-        public void run() {
-            try {
-                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
-                sendReceive = new SendReceive(socket);
-                sendReceive.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public class SendReceive extends Thread{
-        private Socket socket;
-        private InputStream inputStream;
-        private OutputStream outputStream;
-        private String receive;
-
-        static final int MESSAGE_READ = 1;
-
-        public String getReceive(){
-            return receive;
-        }
-
-
-        public SendReceive(Socket skt){
-            socket = skt;
-            try {
-                inputStream = socket.getInputStream();
-                outputStream = socket.getOutputStream();
-
-                if(outputStream == null){
-                    outputStream = socket.getOutputStream();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void run() {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            while(socket != null){
-                try {
-                    bytes = inputStream.read(buffer);
-                    if(bytes > 0){
-                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+//    public class ClientClass extends Thread{
+//        Socket socket;
+//        String hostAdd;
+//
+//        public ClientClass(InetAddress hostAddress){
+//            hostAdd = hostAddress.getHostAddress();
+//            socket = new Socket();
+//        }
+//
+//        @Override
+//        public void run() {
+//            try {
+//                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
+//                sendReceive = new SendReceive(socket);
+//                sendReceive.start();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
+//
+//    public class SendReceive extends Thread{
+//        private Socket socket;
+//        private InputStream inputStream;
+//        private OutputStream outputStream;
+//        private String receive;
+//
+//        static final int MESSAGE_READ = 1;
+//
+//        public String getReceive(){
+//            return receive;
+//        }
+//
+//
+//        public SendReceive(Socket skt){
+//            socket = skt;
+//            try {
+//                inputStream = socket.getInputStream();
+//                outputStream = socket.getOutputStream();
+//
+//                if(outputStream == null){
+//                    outputStream = socket.getOutputStream();
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        @Override
+//        public void run() {
+//            byte[] buffer = new byte[1024];
+//            int bytes;
+//
+//            while(socket != null){
+//                try {
+//                    bytes = inputStream.read(buffer);
+//                    if(bytes > 0){
+//                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
 }
