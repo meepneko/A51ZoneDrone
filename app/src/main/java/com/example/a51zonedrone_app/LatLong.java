@@ -30,7 +30,7 @@ public class LatLong {
 
     // Getter latlng
     public LatLng getLatlng() {
-        return latlng;
+        return new LatLng(latitude,longitude);
     }
 
     // Setter latlng

@@ -164,7 +164,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     static public Client_Thread clientThread;
     static public SendReceiveThread sendReceiveThread;
 
-    int ctr = 0;
+    int i = 0;
 
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
@@ -409,9 +409,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         }
         if(bttn)
         {
-
             double SameThreshold = 17.5;
-            for (int i = ctr; i < allPoints.size(); i++) {
                 LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
                 distanceBetween = latLng.distanceTo(latlng2);
 
@@ -424,10 +422,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                     marker.set(i, new MarkerOptions().title(i + ", Status: " + allPoints.get(i).getPass()));
                     marker.get(i).setIcon(icon).position(allPoints.get(i).getLatlng());
                     mapboxMap.addMarker(marker.get(i));
-                    ctr = i;
-                    break;
+                    i++;
                 }
-            }
         }
     }
 
