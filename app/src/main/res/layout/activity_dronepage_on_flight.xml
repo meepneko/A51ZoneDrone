@@ -16,7 +16,7 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_bias="1.0"
         app:mapbox_cameraZoom="12">
 
     </com.mapbox.mapboxsdk.maps.MapView>
@@ -104,6 +104,268 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/TV6" />
 
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="301dp"
+        android:layout_height="181dp"
+        android:scrollbarAlwaysDrawHorizontalTrack="true"
+        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/mapView_drone"
+        app:layout_constraintVertical_bias="0.25">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/t5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="28dp"
+                android:layout_marginLeft="28dp"
+                android:text="KP"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/t6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="60dp"
+                android:layout_marginLeft="60dp"
+                android:text="KI"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toEndOf="@+id/t5"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/t7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="60dp"
+                android:layout_marginLeft="60dp"
+                android:text="KD"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toEndOf="@+id/t6"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/t1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ROLLING"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t5" />
+
+            <TextView
+                android:id="@+id/t2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PITCHING"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/roll_kp" />
+
+            <TextView
+                android:id="@+id/t3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="YAWNING"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/pitch_kp" />
+
+            <TextView
+                android:id="@+id/t4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ALTITUDE"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/yawn_kp" />
+
+            <TextView
+                android:id="@+id/t8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="THROTTLE"
+                android:textColor="@color/yellow"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/alt_kp" />
+
+            <EditText
+                android:id="@+id/roll_kp"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="3.25"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t1" />
+
+            <EditText
+                android:id="@+id/pitch_kp"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="3.25"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t2" />
+
+            <EditText
+                android:id="@+id/yawn_ki"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="0.068"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/yawn_kp"
+                app:layout_constraintTop_toBottomOf="@+id/t3" />
+
+            <EditText
+                android:id="@+id/yawn_kp"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="3.25"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t3" />
+
+            <EditText
+                android:id="@+id/alt_kp"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="10.80"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t4" />
+
+            <EditText
+                android:id="@+id/throttle"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="1400"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/t8" />
+
+            <EditText
+                android:id="@+id/alt_ki"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="0.048"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/alt_kp"
+                app:layout_constraintTop_toBottomOf="@+id/t4" />
+
+            <EditText
+                android:id="@+id/alt_kd"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="2.5"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/alt_ki"
+                app:layout_constraintTop_toBottomOf="@+id/t4" />
+
+            <EditText
+                android:id="@+id/yawn_kd"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="1.92"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/yawn_ki"
+                app:layout_constraintTop_toBottomOf="@+id/t3" />
+
+            <EditText
+                android:id="@+id/pitch_ki"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="0.068"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/pitch_kp"
+                app:layout_constraintTop_toBottomOf="@+id/t2" />
+
+            <EditText
+                android:id="@+id/pitch_kd"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="1.92"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/pitch_ki"
+                app:layout_constraintTop_toBottomOf="@+id/t2" />
+
+            <EditText
+                android:id="@+id/roll_kd"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="1.92"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/roll_ki"
+                app:layout_constraintTop_toBottomOf="@+id/t1" />
+
+            <EditText
+                android:id="@+id/roll_ki"
+                android:layout_width="80dp"
+                android:layout_height="35dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="0.068"
+                android:textColor="@color/yellow"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/roll_kp"
+                app:layout_constraintTop_toBottomOf="@+id/t1" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
     <ImageButton
         android:id="@+id/currLocationBttn"
         android:layout_width="wrap_content"
@@ -113,7 +375,8 @@
         android:contentDescription="@string/contentDescription"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_mylocation" />
+        app:srcCompat="@android:drawable/ic_menu_mylocation"
+        android:layout_marginRight="10dp" />
 
     <Button
         android:id="@+id/button"

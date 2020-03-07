@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
         droneBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
+                Intent startIntent = new Intent(getApplicationContext(), dronepage_compatibility.class);
                 startActivity(startIntent);
             }
         });
@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("check", "Mate main");
             }
         });
-
     }
 }
 

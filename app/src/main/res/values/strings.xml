@@ -36,6 +36,7 @@
     <string name="txt18m">18 meters</string>
     <string name="txt20m">20 meters</string>
     <string name="enable_p2p_button">WiFi Direct On/Off</string>
+    <string name="be_a_developer">Be A Developer</string>
     <string name="discover_peers_button">Discover</string>
     <string name="txt_isConnected">Controller Device Name</string>
 </resources>
