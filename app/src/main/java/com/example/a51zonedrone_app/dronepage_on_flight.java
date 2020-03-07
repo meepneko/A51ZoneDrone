@@ -245,7 +245,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             wifiDirect = 2;
         }
         if (wifiDirect ==  2 || clicked ) {
-            double SameThreshold = 15;
+            //10 meters
+            double SameThreshold = 10;
             double distanceBetween = 0;
             LatLng latlng2 = new LatLng(receivedWaypoints.get(i).getLatlng().getLatitude(), receivedWaypoints.get(i).getLatlng().getLongitude());
             distanceBetween = latLng.distanceTo(latlng2);
@@ -262,12 +263,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 mapboxMap.addMarker(marker.get(i));
                 i++;
             }
-        }
-        else if(wifiDirect == 3)
-        {
-            pwms = "1000100010001000";
-            arduino.send(pwms.getBytes());
-            wifiDirect = 0;
         }
         updateOrientationAngles();
     }
@@ -299,10 +294,12 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             pitch = Math.round(map(pitch,-Math.PI/2,Math.PI/2,-90,90));
             roll =Math.round(map(roll,-Math.PI,Math.PI,-180,180));
             int[] allPWM = PWM(time, pitch, roll,yawn);
-            pwm1 = allPWM[0];
-            pwm2 = allPWM[1];
-            pwm3 = allPWM[2];
-            pwm4 = allPWM[3];
+            if(wifiDirect ==  2|| clicked) {
+                pwm1 = allPWM[0];
+                pwm2 = allPWM[1];
+                pwm3 = allPWM[2];
+                pwm4 = allPWM[3];
+            }
             tv1.setText("Front Left PWM = "+pwm1);
             tv2.setText("Back Left PWM = "+pwm2);
             tv3.setText("Back Right PWM = "+pwm3);
@@ -315,7 +312,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             yawn = 0;
             pitch = 0;
             roll = 0;
-            if (wifiDirect ==  2 || clicked ) {
+            if (wifiDirect ==  2 ) {
                 pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
                 arduino.send(pwms.getBytes());
             }
@@ -580,29 +577,29 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     }
 
     public void Clicked(View view) {
-        clicked = !clicked;
-        target_altitude = 1;
-        receivedWaypoints.add(new LatLong(10.294612, 123.880889,false));
-        receivedWaypoints.add(new LatLong(10.294321, 123.880438,false));
-        receivedWaypoints.add(new LatLong(10.294677,123.880500,false));
-        directionPoint.add(new LatLng(latitude, longitude));
-
-        IconFactory iconFactory = IconFactory.getInstance(this);
-        Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
-
-        for (int index = 0; index < receivedWaypoints.size(); index++) {
-            marker.add(index, new MarkerOptions().title(index + "")
-                    .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
-                    .setIcon(icon));
-            mapboxMap.addMarker(marker.get(index));
-
-            directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
-        }
-
-        directionPoint.add(new LatLng(latitude, longitude));
-
-        lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
-        lineManager.create(lineOptions);
+//        clicked = !clicked;
+//        target_altitude = 1;
+//        receivedWaypoints.add(new LatLong(10.294612, 123.880889,false));
+//        receivedWaypoints.add(new LatLong(10.294321, 123.880438,false));
+//        receivedWaypoints.add(new LatLong(10.294677,123.880500,false));
+//        directionPoint.add(new LatLng(latitude, longitude));
+//
+//        IconFactory iconFactory = IconFactory.getInstance(this);
+//        Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
+//
+//        for (int index = 0; index < receivedWaypoints.size(); index++) {
+//            marker.add(index, new MarkerOptions().title(index + "")
+//                    .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
+//                    .setIcon(icon));
+//            mapboxMap.addMarker(marker.get(index));
+//
+//            directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
+//        }
+//
+//        directionPoint.add(new LatLng(latitude, longitude));
+//
+//        lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
+//        lineManager.create(lineOptions);
     }
 
     private class dronepage_on_flightLocationCallback
@@ -759,6 +756,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     {
                         wifiDirect = 3;
                         receive.setText(receivedString);
+                        pwms = "1000100010001000";
+                        pwm1 = 1000;
+                        pwm2 = 1000;
+                        pwm3 = 1000;
+                        pwm4 = 1000;
+                        arduino.send(pwms.getBytes());
+                        wifiDirect = 0;
                     }
                     temp = null;
                 }
@@ -1088,97 +1092,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         mapView.onSaveInstanceState(outState);
     }
 
-//    Handler handler = new Handler(new Handler.Callback() {
-//        @Override
-//        public boolean handleMessage(@NonNull Message msg) {
-//            switch(msg.what){
-//                case MESSAGE_READ:
-//                    byte[] readBuff = (byte[]) msg.obj;
-//                    String tempMsg = new String(readBuff, 0, msg.arg1);
-//                    receivedString = tempMsg;
-//                    receive.setText(receivedString);
-//                    if(tempMsg != null) {
-//                        wifiDirect = 1;
-//                    }
-//                    else if(wifiDirect == 2 && tempMsg != null)
-//                    {
-//                        wifiDirect = 3;
-//                    }
-//                    tempMsg = null;
-//                    break;
-//            }
-//            return true;
-//        }
-//    });
-
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
-
     }
-
-//    public class ClientClass extends Thread{
-//        Socket socket;
-//        String hostAdd;
-//
-//        public ClientClass(InetAddress hostAddress){
-//            hostAdd = hostAddress.getHostAddress();
-//            socket = new Socket();
-//        }
-//
-//        @Override
-//        public void run() {
-//            try {
-//                socket.connect(new InetSocketAddress(hostAdd, 8888),500);
-//                sendReceive = new SendReceive(socket);
-//                sendReceive.start();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    public class SendReceive extends Thread{
-//        private Socket socket;
-//        private InputStream inputStream;
-//        private OutputStream outputStream;
-//        private String receive;
-//
-//        static final int MESSAGE_READ = 1;
-//
-//        public String getReceive(){
-//            return receive;
-//        }
-//
-//
-//        public SendReceive(Socket skt){
-//            socket = skt;
-//            try {
-//                inputStream = socket.getInputStream();
-//                outputStream = socket.getOutputStream();
-//
-//                if(outputStream == null){
-//                    outputStream = socket.getOutputStream();
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        @Override
-//        public void run() {
-//            byte[] buffer = new byte[1024];
-//            int bytes;
-//
-//            while(socket != null){
-//                try {
-//                    bytes = inputStream.read(buffer);
-//                    if(bytes > 0){
-//                        handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
-//                    }
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    }
 }
