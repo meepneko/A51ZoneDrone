@@ -336,7 +336,6 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                     ((dronepage_on_flight) mainActivity).setIsWifiConnected(true);
                 }
                 else {
-                    //mainActivity.constate.setText("DEVICE DISCONNECTED");
                     ((dronepage_on_flight) mainActivity).setIsWifiConnected(false);
                 }
             }

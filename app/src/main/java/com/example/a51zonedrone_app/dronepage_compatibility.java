@@ -13,8 +13,13 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +36,7 @@ public class dronepage_compatibility extends AppCompatActivity {
     private LocationManager locationManager;
     private boolean checkGY, checkAC, checkMA;
     private TextView onConnect;
+    private ImageView imageView;
 
 
     static final int MESSAGE_READ = 1;
@@ -41,34 +47,57 @@ public class dronepage_compatibility extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compatibility);
         onConnect = findViewById(R.id.onConnect);
+        imageView = findViewById(R.id.imgView);
 
         sensorManager =(SensorManager) getSystemService(Context.SENSOR_SERVICE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        StringBuilder sensorText= new StringBuilder();
+//        LinearLayout linearLayout = new LinearLayout(getApplicationContext());
+//        ImageView imageView = new ImageView(getApplicationContext());
+//        imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+//        imageView.setImageResource(R.drawable.cancel);
+//
+//        linearLayout.addView(imageView);
+//        setContentView(linearLayout);
+
+        SpannableStringBuilder sensorText= new SpannableStringBuilder ();
 
         //Accelerometer
         if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null){
             // Success!
             checkAC = true;
-            sensorText.append(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER).getName()).append(
-                    System.getProperty("line.separator"));
+            sensorText.append(" ", new ImageSpan(getApplicationContext(), R.drawable.tick), 0)
+                    .append("\t\t\t")
+                    .append("Accelerometer")
+                    .append(System.getProperty("line.separator"))
+                    .append(System.getProperty("line.separator"));
         } else {
             // Failure!
             checkAC = false;
-            sensorText.append("No Accelerometer found").append(System.getProperty("line.separator"));
+            sensorText.append(" ", new ImageSpan(getApplicationContext(), R.drawable.cancel), 0)
+                    .append("\t\t\t")
+                    .append("Accelerometer")
+                    .append(System.getProperty("line.separator"))
+                    .append(System.getProperty("line.separator"));
         }
 
         //Magnetometer
         if (sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null){
             // Success!
             checkMA = true;
-            sensorText.append(sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD).getName()).append(
-                    System.getProperty("line.separator"));
+            sensorText.append(" ", new ImageSpan(getApplicationContext(), R.drawable.tick), 0)
+                    .append("\t\t\t")
+                    .append("Magnetometer")
+                    .append(System.getProperty("line.separator"))
+                    .append(System.getProperty("line.separator"));
         } else {
             // Failure!
             checkMA = false;
-            sensorText.append("No Magnetometer found").append(System.getProperty("line.separator"));
+            sensorText.append(" ", new ImageSpan(getApplicationContext(), R.drawable.cancel), 0)
+                    .append("\t\t\t")
+                    .append("Magnetometer")
+                    .append(System.getProperty("line.separator"))
+                    .append(System.getProperty("line.separator"));
         }
 
         TextView sensorTextView = (TextView) findViewById(R.id.sensor_list);
@@ -78,7 +107,7 @@ public class dronepage_compatibility extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkAC == true /*&& checkMA == true*/) {
+                if(checkAC == true && checkMA == true) {
                     Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
                     startActivity(startIntent);
                 }
