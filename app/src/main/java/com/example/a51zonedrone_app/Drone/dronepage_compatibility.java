@@ -1,6 +1,5 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.Drone;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
@@ -8,27 +7,16 @@ import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.text.SpannableStringBuilder;
 import android.text.style.ImageSpan;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import com.example.a51zonedrone_app.R;
 
 
 public class dronepage_compatibility extends AppCompatActivity {
@@ -51,14 +39,6 @@ public class dronepage_compatibility extends AppCompatActivity {
 
         sensorManager =(SensorManager) getSystemService(Context.SENSOR_SERVICE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-//        LinearLayout linearLayout = new LinearLayout(getApplicationContext());
-//        ImageView imageView = new ImageView(getApplicationContext());
-//        imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-//        imageView.setImageResource(R.drawable.cancel);
-//
-//        linearLayout.addView(imageView);
-//        setContentView(linearLayout);
 
         SpannableStringBuilder sensorText= new SpannableStringBuilder ();
 
@@ -107,7 +87,7 @@ public class dronepage_compatibility extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkAC == true && checkMA == true) {
+                if(checkAC == true /*&& checkMA == true*/) {
                     Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
                     startActivity(startIntent);
                 }

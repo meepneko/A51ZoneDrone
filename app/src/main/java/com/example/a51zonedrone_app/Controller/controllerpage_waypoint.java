@@ -1,12 +1,11 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.Controller;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,7 +19,6 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,15 +34,22 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.a51zonedrone_app.LatLong;
+import com.example.a51zonedrone_app.R;
+import com.example.a51zonedrone_app.WiFiDirect.Client_Thread;
+import com.example.a51zonedrone_app.WiFiDirect.SendReceiveThread;
+import com.example.a51zonedrone_app.WiFiDirect.Server_Side_Thread;
+import com.example.a51zonedrone_app.WiFiDirect.WifiDirectBroadcastReceiver;
+import com.example.a51zonedrone_app.Drone.dronepage_on_flight;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -53,6 +58,7 @@ import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
@@ -71,6 +77,7 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
 import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,6 +88,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 // Classes needed to initialize the map
 // Classes needed to handle location permissions
@@ -134,9 +142,12 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private int index = 0;
     private List<MarkerOptions> marker = new ArrayList<>();
     private MarkerOptions markerOptions = new MarkerOptions();
+    private MarkerOptions droneOptions = new MarkerOptions();
     private PolygonOptions poly = new PolygonOptions();
     private LineOptions lineOptions = new LineOptions();
     private LineManager lineManager;
+    private LatLng droneloc;
+    private TextView text;
 
     static final int MESSAGE_READ = 1;
 
@@ -158,8 +169,8 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     private boolean isWifiConnected = false;
     private ListView listView;
     private dronepage_on_flight drone;
-    static String connectedDeviceName="";
-    static Handler handler;
+    public static String connectedDeviceName="";
+    static public Handler handler;
     static public Server_Side_Thread serverSideThread;
     static public Client_Thread clientThread;
     static public SendReceiveThread sendReceiveThread;
@@ -208,11 +219,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                     Toast.makeText(getApplicationContext(), "Please make sure you're connected to the internet and your location is on.", Toast.LENGTH_SHORT).show();
                 }
 
-                // Create a Toast which displays the new location's coordinates
-//                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
-//                        String.valueOf(latitude), String.valueOf(longitude)),
-//                        Toast.LENGTH_SHORT).show();
-
                 // Pass the new location to the Maps SDK's LocationComponent
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
@@ -240,7 +246,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Mapbox access token is configured here. This needs to be called either in your application
+        // Mapbox access token is configured here. This needs to be called either in the application
         // object or in the same activity which contains the mapview.
         Mapbox.getInstance(this, getString(R.string.access_token));
 
@@ -263,6 +269,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
         startBtn = (Button)findViewById(R.id.startBtn);
         currentLoc = (ImageButton)findViewById(R.id.currentLocationImageButton);
+        text = findViewById(R.id.textView);
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
@@ -288,6 +295,13 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                 if (msg.what == 1) {
                     byte[] readBuff = (byte[]) msg.obj;
                     String temp = new String(readBuff, 0, msg.arg1);
+
+                    //text.setText(temp);
+//                    StringTokenizer tokens = new StringTokenizer(temp, ",");
+//                    double lat = Double.parseDouble(tokens.nextToken());
+//                    double lon = Double.parseDouble(tokens.nextToken());
+//                    Log.d("DUKAA", lat+" "+lon);
+//                    droneloc = new LatLng(lat, lon);
                 }
                 return true;
             }
@@ -367,6 +381,11 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                             }
                             directionPoint.add(latlng1);
 
+                            markerOptions.position(latlng1);
+                            mapboxMap.addMarker(markerOptions);
+                            mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius)).fillColor(Color.parseColor("#12121212")));
+
+
                             lineOptions.withLatLngs(directionPoint).withLineColor("#EE3B3B").withLineWidth(3.0f);
                             lineManager.create(lineOptions);
 
@@ -384,14 +403,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                         else {
                             sendReceiveThread.write(msg.getBytes());
                         }
-
-//                        try {
-//                            Log.d("TAG3","" + msg);
-//                            sendReceive.write(msg.getBytes());
-//                        } catch(Exception e){
-//                            Toast.makeText(getApplicationContext(), "Please try reconnecting. Reason: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//
-//                        }
                     }
                 }
             }
@@ -399,32 +410,20 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     }
 
     public void UpdateUI(double lat, double lon){
+
         LatLng latLng = new LatLng(lat, lon);
+      //  LatLng latLng = new LatLng(lt, lonn);
 
-        if(checker == false){
-            markerOptions.position(latLng);
-            mapboxMap.addMarker(markerOptions);
-            mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius)).fillColor(Color.parseColor("#12121212")));
-            checker = true;
-        }
-        if(bttn)
-        {
-            double SameThreshold = 17.5;
-                LatLng latlng2 = new LatLng(allPoints.get(i).getLatlng().getLatitude(), allPoints.get(i).getLatlng().getLongitude());
-                distanceBetween = latLng.distanceTo(latlng2);
-
-                if (distanceBetween < SameThreshold) {
-                    mapboxMap.removeMarker(marker.get(i).getMarker());
-                    //TODO: Himoag array ang markers unya usaba ni nga part sa code
-                    allPoints.get(i).setPass(true);
-                    IconFactory iconFactory = IconFactory.getInstance(controllerpage_waypoint.this);
-                    Icon icon = iconFactory.fromResource(R.drawable.check_marker);
-                    marker.set(i, new MarkerOptions().title(i + ", Status: " + allPoints.get(i).getPass()));
-                    marker.get(i).setIcon(icon).position(allPoints.get(i).getLatlng());
-                    mapboxMap.addMarker(marker.get(i));
-                    i++;
-                }
-        }
+//        if(checker == false){
+////            droneOptions.position(droneloc);
+////            mapboxMap.addMarker(droneOptions);
+//
+//            markerOptions.position(latLng);
+//            mapboxMap.addMarker(markerOptions);
+//            mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius)).fillColor(Color.parseColor("#12121212")));
+//            checker = true;
+//
+//        }
     }
 
     private ArrayList<LatLng> polygonCircleForCoordinate(LatLng location, double radius){
@@ -513,14 +512,12 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        //permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == 1) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(controllerpage_waypoint.this, "Success.", Toast.LENGTH_SHORT).show();
 
             } else {
-                //Toast.makeText(MainActivity.this,"Cant run the app without location permission\nPlease Give The Permission",Toast.LENGTH_LONG).show();
                 ActivityCompat.requestPermissions(controllerpage_waypoint.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
@@ -566,17 +563,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
                         mapboxMap.clear();
                         Toast.makeText(getApplicationContext(),"The drone will now return to the starting point",Toast.LENGTH_LONG).show();
-//                        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
-//                            @Override
-//                            public void onSuccess() {
-//                                Toast.makeText(getApplicationContext(), "Disconnected", Toast.LENGTH_SHORT).show();
-//                            }
-//
-//                            @Override
-//                            public void onFailure(int reason) {
-//                                Toast.makeText(getApplicationContext(), "Still Connected", Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
                         controllerpage_waypoint.super.finish();
                     }
                 });
@@ -710,7 +696,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         });
     }
 
-    WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+    public WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peersList) {
             if(!peersList.getDeviceList().equals(peers)){
@@ -738,36 +724,18 @@ public class controllerpage_waypoint extends AppCompatActivity implements
         }
     };
 
-//    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
-//        @Override
-//        public void onConnectionInfoAvailable(WifiP2pInfo info) {
-//            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-//
-//            if(info.groupFormed && info.isGroupOwner){
-//                serverClass = new ServerClass();
-//                serverClass.run();
-//            }
-//        }
-//    };
-
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+    public WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
             InetAddress inetAddress = info.groupOwnerAddress;
             if (info.groupFormed && info.isGroupOwner) {
-                //constate.setText("Host");
                 Log.d("Reached", " Here 1");
                 serverSideThread = new Server_Side_Thread();
                 serverSideThread.start();
-                //Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-                //startActivity(intent);
             } else if (info.groupFormed) {
-                //constate.setText("Client");
                 Log.d("Reached", " Here 2");
                 clientThread = new Client_Thread(inetAddress);
                 clientThread.start();
-                //Intent intent = new Intent(MainActivity.this, ChatActivity.class);
-                //startActivity(intent);
             }
 
         }

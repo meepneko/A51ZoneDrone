@@ -92,6 +92,6 @@ public class LatLong {
     @Override
     public String toString()
     {
-        return ("["+this.latitude+","+this.longitude+","+this.pass+"]");
+        return ("["+this.latitude+","+this.longitude+"]");
     }
 }

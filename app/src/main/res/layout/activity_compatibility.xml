@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".dronepage_compatibility">
+    tools:context=".Drone.dronepage_compatibility">
 
     <Button
         android:id="@+id/btnConfirm"

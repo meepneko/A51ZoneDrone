@@ -31,13 +31,12 @@
             android:value="@integer/google_play_services_version" />
 
         <activity
-            android:name=".controllerpage_waypoint"
+            android:name=".Controller.controllerpage_waypoint"
             android:label="@string/title_activity_controllerpage_waypoint"
             android:screenOrientation="portrait"></activity>
-        <activity android:name=".controller_page_connectWifi" android:screenOrientation="portrait"/>
-        <activity android:name=".controllerpage_setaltitude" android:screenOrientation="landscape"/>
-        <activity android:name=".dronepage_on_flight" />
-        <activity android:name=".dronepage_compatibility" />
+        <activity android:name=".Controller.controllerpage_setaltitude" android:screenOrientation="landscape"/>
+        <activity android:name=".Drone.dronepage_on_flight" />
+        <activity android:name=".Drone.dronepage_compatibility" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

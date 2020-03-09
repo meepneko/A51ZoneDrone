@@ -1,4 +1,4 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.Controller;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import com.example.a51zonedrone_app.R;
 
 public class controllerpage_setaltitude extends AppCompatActivity {
    private TextView Tvalt;

@@ -1,4 +1,4 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.Drone;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -7,11 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.Shader;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -42,6 +38,13 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.a51zonedrone_app.Controller.controllerpage_waypoint;
+import com.example.a51zonedrone_app.LatLong;
+import com.example.a51zonedrone_app.R;
+import com.example.a51zonedrone_app.WiFiDirect.Client_Thread;
+import com.example.a51zonedrone_app.WiFiDirect.SendReceiveThread;
+import com.example.a51zonedrone_app.WiFiDirect.Server_Side_Thread;
+import com.example.a51zonedrone_app.WiFiDirect.WifiDirectBroadcastReceiver;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -55,7 +58,6 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -69,22 +71,10 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.plugins.annotation.LineManager;
 import com.mapbox.mapboxsdk.plugins.annotation.LineOptions;
-import com.mapbox.mapboxsdk.style.layers.LineLayer;
-import com.mapbox.mapboxsdk.style.layers.Property;
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 
-import org.w3c.dom.Text;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.security.Policy;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -111,9 +101,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private TextView tv6;
     private TextView tv5;
     private TextView tv7;
-    private ScrollView sv;
     private TextView receive;
     private TextView tv;
+    private ScrollView sv;
+
 
     //EditText
     private EditText pitch_kp;
@@ -140,7 +131,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private boolean isWifiP2pEnabled = false;
     private boolean isWifiConnected = false;
     private String receivedString;
-    static Handler handler;
+    public static Handler handler;
+    public static String connectedDeviceName="";
 
     // System sensor manager instance.
     private SensorManager sensorManager;
@@ -164,11 +156,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     //PID of sensors
     float elapsedTime, time, timePrev;
     private int pwm1,pwm2,pwm3,pwm4;
+//    private float desire_angle;
 //    private float kp;//3.55
 //    private float ki;//0.005
 //    private float kd;//2.05
 //    private float throttle;
     private boolean developerOptions = false;
+
 
     //PID
     private float roll_previous_error,pitch_previous_error,yaw_previous_error,alt_prev_error;
@@ -182,6 +176,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     String[] deviceNameArray; //Used to show device name in ListView
     WifiP2pDevice[] deviceArray; //Used to connect a Device
+    static WifiP2pDevice wifiP2pDevice;
     private ListView listView;
     WifiP2pManager.Channel mChannel;
     static final int MESSAGE_READ = 1;
@@ -209,7 +204,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     static public Server_Side_Thread serverSideThread;
     static public Client_Thread clientThread;
     static public SendReceiveThread sendReceiveThread;
-
 
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
         this.isWifiP2pEnabled = isWifiP2pEnabled;
@@ -240,10 +234,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             for (String ll : llReplacedParts) {
                 String[] tok = llReplacedParts[count].split(",");
                 count++;
-                receivedWaypoints.add(new LatLong(Double.parseDouble(tok[0]), Double.parseDouble(tok[1]), Boolean.parseBoolean(tok[2])));
+                receivedWaypoints.add(new LatLong(Double.parseDouble(tok[0]), Double.parseDouble(tok[1]), false));
             }
 
             directionPoint.add(latLng);
+
+            markerOptions.position(latLng);
+            mapboxMap.addMarker(markerOptions);
 
             IconFactory iconFactory = IconFactory.getInstance(this);
             Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
@@ -264,9 +261,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             wifiDirect = 2;
         }
         if (wifiDirect ==  2 || clicked ) {
+            double distanceBetween = 0;
             //10 meters
             double SameThreshold = 10;
-            double distanceBetween = 0;
             LatLng latlng2 = new LatLng(receivedWaypoints.get(i).getLatlng().getLatitude(), receivedWaypoints.get(i).getLatlng().getLongitude());
             distanceBetween = latLng.distanceTo(latlng2);
             whereToYawn = (int)LatLong.computeAngleBetween(latLng,latlng2);
@@ -277,6 +274,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 receivedWaypoints.get(i).setPass(true);
                 IconFactory iconFactory = IconFactory.getInstance(dronepage_on_flight.this);
                 Icon icon = iconFactory.fromResource(R.drawable.check_marker);
+                receivedWaypoints.get(i).setPass(true);
                 marker.set(i, new MarkerOptions().title(i + ", Status: " + receivedWaypoints.get(i).getPass()));
                 marker.get(i).setIcon(icon).position(receivedWaypoints.get(i).getLatlng());
                 mapboxMap.addMarker(marker.get(i));
@@ -291,9 +289,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         SensorManager.getRotationMatrix(rotationMatrix, null,
                 accelerometerReading, magnetometerReading);
 
-        // "mRotationMatrix" now has up-to-date information.
-        /*First calculate the error between the desired angle and
-         *the real measured angle*/
+        // "mRotationMatrix" now has up-to-date informatio /*First calculate the error between the desired angle and/*the real measured angle*/
         or = SensorManager.getOrientation(rotationMatrix, orientationAngles);
         if (count < limit) {
             //ROLL 4.70 to -4.70
@@ -312,8 +308,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             yawn = Math.round(map(yawn,0,Math.PI,0,180)+180);
             pitch = Math.round(map(pitch,-Math.PI/2,Math.PI/2,-90,90));
             roll =Math.round(map(roll,-Math.PI,Math.PI,-180,180));
+            int[] allPWM = PWM(time, pitch, roll,yawn);
             if(wifiDirect ==  2|| clicked) {
-                int[] allPWM = PWM(time, pitch, roll,yawn);
                 pwm1 = allPWM[0];
                 pwm2 = allPWM[1];
                 pwm3 = allPWM[2];
@@ -331,7 +327,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             yawn = 0;
             pitch = 0;
             roll = 0;
-            if (wifiDirect ==  2 ) {
+            if (wifiDirect ==  2 || clicked) {
                 pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
                 arduino.send(pwms.getBytes());
             }
@@ -656,7 +652,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                         return;
                     }
                 } catch(Exception e){
-                    Toast.makeText(getApplicationContext(), "Please make sure you're connected to the internet and your location is on.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), /*"Please make sure you're connected to the internet and your location is on."*/
+                            e.getMessage() + "", Toast.LENGTH_LONG).show();
                 }
 
                 // Create a Toast which displays the new location's coordinates
@@ -721,16 +718,16 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 //        ki = (float) 0.005;
 //        kd = (float) 2.05;
         pwm1 = pwm2 = pwm3 = pwm4 = 1000;
+//        desire_angle = 0;
         roll_previous_error = 0;
         pitch_previous_error = 0;
         yaw_previous_error = 0;
+//        throttle = 1400;
         pwms = "1000100010001000";
 
         setContentView(R.layout.activity_dronepage_on_flight);
         locBttn = findViewById(R.id.currLocationBttn);
         receive = findViewById(R.id.txt_receive);
-
-        //TextView Instantiate
         tv = (TextView)findViewById(R.id.tv);
         tv1 = (TextView) findViewById(R.id.TV1);
         tv2 = (TextView) findViewById(R.id.TV3);
@@ -739,7 +736,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         tv5 = (TextView) findViewById(R.id.TV5);
         tv6 = (TextView) findViewById(R.id.TV6);
         tv7 = (TextView) findViewById(R.id.TV7);
-        sv = (ScrollView)findViewById(R.id.scrollView);
         tv.setText("ALTITUDE = NULL");
 
         //EditText Instantiate
@@ -756,7 +752,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         alt_ki = (EditText) findViewById(R.id.alt_ki);
         alt_kd = (EditText) findViewById(R.id.alt_kd);
         throttle = (EditText) findViewById(R.id.throttle);
-
+        sv = (ScrollView) findViewById(R.id.scrollView);
 
         mapView = findViewById(R.id.mapView_drone);
         mapView.onCreate(savedInstanceState);
@@ -793,9 +789,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     }
                     else if(wifiDirect == 2 && receivedString == "stop")
                     {
+                        wifiDirect = 3;
                         receive.setText(receivedString);
                         pwms = "1000100010001000";
-                        pwm1 =pwm2 =pwm3 = pwm4 = 1000;
+                        pwm1 = 1000;
+                        pwm2 = 1000;
+                        pwm3 = 1000;
+                        pwm4 = 1000;
                         arduino.send(pwms.getBytes());
                         wifiDirect = 0;
                     }
@@ -838,11 +838,25 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
     public void UpdateUI(double lat, double lon){
         LatLng latLng = new LatLng(lat, lon);
-        if(!checker){
-            MarkerOptions markerOptions = new MarkerOptions().position(latLng);
-            mapboxMap.addMarker(markerOptions);
-            checker = true;
-        }
+
+//        if(!checker){
+//            MarkerOptions markerOptions = new MarkerOptions().position(latLng);
+//            mapboxMap.addMarker(markerOptions);
+//            checker = true;
+//
+//        }
+
+
+//        if(isWifiP2pEnabled){
+//            if(isWifiConnected){
+//                String m = "nisend";
+//                if (dronepage_on_flight.sendReceiveThread == null) {
+//                    makeConnection(dronepage_on_flight.wifiP2pDevice);
+//                } else {
+//                    sendReceiveThread.write(m.getBytes());
+//                }
+//            }
+//        }
     }
 
     /**
@@ -939,21 +953,11 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_directEnable:
-                if (mManager != null && mChannel != null) {
-
-                    // Since this is the system wireless settings activity, it's
-                    // not going to send us a result. We will be notified by
-                    // WiFiDeviceBroadcastReceiver instead.
-
-                    //startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-                    if(wifiManager.isWifiEnabled()){
-                        wifiManager.setWifiEnabled(false);
-                    }
-                    else{
-                        wifiManager.setWifiEnabled(true);
-                    }
-                } else {
-                    //Log.e(TAG, "channel or manager is null");
+                if(!wifiManager.isWifiEnabled()){
+                    wifiManager.setWifiEnabled(true);
+                }
+                else{
+                    wifiManager.setWifiEnabled(false);
                 }
                 return true;
             case R.id.action_directDiscover:
@@ -974,22 +978,8 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
                             public void onItemClick(AdapterView<?> parent, View view, int i, long l) {
-                                final WifiP2pDevice device = deviceArray[i];
-                                WifiP2pConfig config = new WifiP2pConfig();
-                                config.deviceAddress = device.deviceAddress;
-                                //config.wps.setup = WpsInfo.PBC;
-
-                                mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
-                                    @Override
-                                    public void onSuccess() {
-                                        Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT).show();
-                                    }
-
-                                    @Override
-                                    public void onFailure(int reason) {
-                                        Toast.makeText(getApplicationContext(), "Not Connected", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                wifiP2pDevice = deviceArray[i];
+                                makeConnection(wifiP2pDevice);
                             }
                         });
                     }
@@ -1018,7 +1008,23 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         }
     }
 
-    WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+    void makeConnection(final WifiP2pDevice wifiP2pDevice) {
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = wifiP2pDevice.deviceAddress;
+        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getApplicationContext(), "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Toast.makeText(getApplicationContext(), "Connection failed " + reason, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peersList) {
             if(!peersList.getDeviceList().equals(peers)){
@@ -1036,7 +1042,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 }
 
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(dronepage_on_flight.this, android.R.layout.simple_list_item_1, deviceNameArray);
-                if(adapter != null) listView.setAdapter(adapter);
+                if(adapter != null && listView != null) listView.setAdapter(adapter);
             }
 
             if(peers.size() == 0){
@@ -1046,7 +1052,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         }
     };
 
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+    public WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
             InetAddress inetAddress = info.groupOwnerAddress;
@@ -1104,26 +1110,22 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         // Don't receive any more updates from either sensor.
         sensorManager.unregisterListener((SensorEventListener) this);
     }
-
     @Override
     protected void onStart() {
         super.onStart();
         mapView.onStart();
         arduino.setArduinoListener(this);
     }
-
     @Override
     protected void onStop() {
         super.onStop();
         mapView.onStop();
     }
-
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -1134,13 +1136,11 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         arduino.unsetArduinoListener();
         arduino.close();
     }
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         mapView.onSaveInstanceState(outState);
     }
-
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
     }

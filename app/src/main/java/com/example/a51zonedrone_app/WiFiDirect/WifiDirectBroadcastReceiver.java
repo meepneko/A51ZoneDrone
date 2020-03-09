@@ -1,4 +1,4 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.WiFiDirect;
 //
 //import android.content.BroadcastReceiver;
 //import android.content.Context;
@@ -244,6 +244,9 @@ import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.widget.Toast;
+
+import com.example.a51zonedrone_app.Controller.controllerpage_waypoint;
+import com.example.a51zonedrone_app.Drone.dronepage_on_flight;
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 

@@ -1,4 +1,7 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.WiFiDirect;
+
+import com.example.a51zonedrone_app.Controller.controllerpage_waypoint;
+import com.example.a51zonedrone_app.Drone.dronepage_on_flight;
 
 import java.io.IOException;
 import java.io.InputStream;

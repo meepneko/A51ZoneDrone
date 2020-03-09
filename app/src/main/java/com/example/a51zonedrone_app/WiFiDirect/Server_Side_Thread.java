@@ -1,7 +1,8 @@
-package com.example.a51zonedrone_app;
+package com.example.a51zonedrone_app.WiFiDirect;
 
 import android.util.Log;
-import android.widget.Toast;
+
+import com.example.a51zonedrone_app.Controller.controllerpage_waypoint;
 
 import java.net.ServerSocket;
 import java.net.Socket;

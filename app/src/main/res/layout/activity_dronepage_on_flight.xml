@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    tools:context=".dronepage_on_flight">
+    tools:context=".Drone.dronepage_on_flight">
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView_drone"
@@ -110,7 +110,7 @@
         android:layout_height="181dp"
         android:scrollbarAlwaysDrawHorizontalTrack="true"
         android:scrollbarAlwaysDrawVerticalTrack="true"
-        android:visibility="visible"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
