@@ -76,6 +76,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -85,10 +86,6 @@ import me.aflak.arduino.ArduinoListener;
 
 public class dronepage_on_flight extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener,
         SensorEventListener, ArduinoListener {
-
-    //altitude
-    private float altitude = 0;
-    private float target_altitude = 0;
 
     //yaw
     private int whereToYawn = 0;
@@ -101,6 +98,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private TextView tv6;
     private TextView tv5;
     private TextView tv7;
+    private TextView tv8;
     private TextView receive;
     private TextView tv;
     private ScrollView sv;
@@ -121,7 +119,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     private EditText alt_kd;
     private EditText throttle;
 
-//    ClientClass clientClass;
+    //    ClientClass clientClass;
 //    SendReceive sendReceive;
     WifiManager wifiManager;
     WifiP2pManager mManager;
@@ -147,16 +145,34 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     //Nano VID 0x1A86
     private Arduino arduino;
 
-    //Averaging the sensors
-    private int count;
-    private float or1,or2,or3;
-    private float pitch,roll,yawn;
-    private int limit;
+    int numReadings = 8;
+
+    //Smoothing
+    float[] yawn_readings =new float[numReadings];
+    float[] roll_readings =new float[numReadings];
+    float[] pitch_readings =new float[numReadings];
+    float[] altitude_readings =new float[numReadings];
+    int readIndex = 0;
+    float total_yawn = 0;
+    float average_yawn = 0;
+    float total_pitch = 0;
+    float average_pitch = 0;
+    float total_roll = 0;
+    float average_roll = 0;
+    float average_altitude = 0;
+    float total_altitude = 0;
+
+    //Sensors
+    private float pitch,roll,yawn,alt;
+    //altitude
+    private float altitude = 0;
+    private float target_altitude = 0;
+
 
     //PID of sensors
     float elapsedTime, time, timePrev;
     private int pwm1,pwm2,pwm3,pwm4;
-//    private float desire_angle;
+    //    private float desire_angle;
 //    private float kp;//3.55
 //    private float ki;//0.005
 //    private float kd;//2.05
@@ -260,7 +276,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             lineManager.create(lineOptions);
             wifiDirect = 2;
         }
-        if (wifiDirect ==  2 || clicked ) {
+        if (wifiDirect ==  2/*||clicked*/) {
             double distanceBetween = 0;
             //10 meters
             double SameThreshold = 10;
@@ -274,12 +290,11 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 receivedWaypoints.get(i).setPass(true);
                 IconFactory iconFactory = IconFactory.getInstance(dronepage_on_flight.this);
                 Icon icon = iconFactory.fromResource(R.drawable.check_marker);
-                receivedWaypoints.get(i).setPass(true);
                 marker.set(i, new MarkerOptions().title(i + ", Status: " + receivedWaypoints.get(i).getPass()));
                 marker.get(i).setIcon(icon).position(receivedWaypoints.get(i).getLatlng());
                 mapboxMap.addMarker(marker.get(i));
                 i++;
-            }
+        }
         }
         updateOrientationAngles();
     }
@@ -291,108 +306,180 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
         // "mRotationMatrix" now has up-to-date informatio /*First calculate the error between the desired angle and/*the real measured angle*/
         or = SensorManager.getOrientation(rotationMatrix, orientationAngles);
-        if (count < limit) {
-            //ROLL 4.70 to -4.70
-            //PITCH 2.34 to -2.34
-            or1 = (float)or[0];
-            or2 = (float)or[1];
-            or3 = (float)or[2];
-            yawn += or1;
-            pitch += or2;
-            roll += or3;
-            count++;
-        } else {
-            yawn /= limit;
-            pitch /= limit;
-            roll /= limit;
-            yawn = Math.round(map(yawn,0,Math.PI,0,180)+180);
-            pitch = Math.round(map(pitch,-Math.PI/2,Math.PI/2,-90,90));
-            roll =Math.round(map(roll,-Math.PI,Math.PI,-180,180));
-            int[] allPWM = PWM(time, pitch, roll,yawn);
-            if(wifiDirect ==  2|| clicked) {
-                pwm1 = allPWM[0];
-                pwm2 = allPWM[1];
-                pwm3 = allPWM[2];
-                pwm4 = allPWM[3];
+
+        //Smoothing
+        // subtract the last reading:
+        total_yawn = total_yawn - yawn_readings[readIndex];
+        total_pitch = total_pitch -pitch_readings[readIndex];
+        total_roll = total_roll - roll_readings[readIndex];
+        total_altitude = total_altitude - altitude_readings[readIndex];
+        // read from the sensor:
+        yawn_readings[readIndex] = or[0];
+        pitch_readings[readIndex] = or[1];
+        roll_readings[readIndex] = or[2];
+        altitude_readings[readIndex] = altitude;
+        // add the reading to the total:
+        total_yawn = total_yawn + yawn_readings[readIndex];
+        total_pitch =total_pitch + pitch_readings[readIndex];
+        total_roll = total_roll +roll_readings[readIndex];
+        total_altitude = total_altitude + altitude_readings[readIndex];
+
+        // advance to the next position in the array:
+        readIndex = readIndex + 1;
+            if (readIndex >= numReadings) {
+                readIndex = 0;
             }
-            tv1.setText("Front Left PWM = "+pwm1);
-            tv2.setText("Back Left PWM = "+pwm2);
-            tv3.setText("Back Right PWM = "+pwm3);
-            tv4.setText("Front Right PWM = "+pwm4);
-            tv5.setText(roll+":Roll");
-            tv6.setText(pitch+":Pitch");
-            tv7.setText(yawn+":Azimuth");
-                /*First calculate the error between the desired angle and
-                  the real measured angle*/
-            yawn = 0;
-            pitch = 0;
-            roll = 0;
-            if (wifiDirect ==  2 || clicked) {
-                pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
-                arduino.send(pwms.getBytes());
-            }
-            count = 0;
+        average_yawn = total_yawn / numReadings;
+        average_pitch = total_pitch / numReadings;
+        average_roll = total_roll / numReadings;
+        average_altitude = total_altitude/numReadings;
+        //Smoothing
+        yawn = Math.round(map(average_yawn,0,Math.PI,0,180)+180);
+        pitch = Math.round(map(average_pitch,-Math.PI/2,Math.PI/2,-90,90));
+        roll = Math.round(map(average_roll,-Math.PI,Math.PI,-180,180));
+        alt = Float.parseFloat(String.format ("%.1f", average_altitude));
+            if (wifiDirect == 2/*||clicked*/) {
+            int[] allPWM = PWM(time, pitch, roll,yawn,alt);
+            pwm1 = allPWM[0];//Front Left
+            pwm2 = allPWM[1];//Back Left
+            pwm3 = allPWM[2];//Back Right
+            pwm4 = allPWM[3];//Front Right
         }
+        tv1.setText("Front Left PWM = " + pwm1);
+        tv2.setText("Back Left PWM = " + pwm2);
+        tv3.setText("Back Right PWM = " + pwm3);
+        tv4.setText("Front Right PWM = " + pwm4);
+        tv5.setText(roll+" :Roll");
+        tv6.setText(pitch+" :Pitch");
+        tv7.setText(yawn+" :Azimuth");
+        tv8.setText(alt+" :Altitude");
+        /*First calculate the error between the desired angle and
+        the real measured angle*/
+        roll = 0;
+        pitch = 0;
+        yawn = 0;
+        alt = 0;
+        if (wifiDirect == 2/*||clicked*/){
+           // Toast.makeText(getApplicationContext(),"wifiDirect = 2" + pwms,Toast.LENGTH_SHORT).show();
+            pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
+            arduino.send(pwms.getBytes());
+        }
+        else if (wifiDirect >2 && wifiDirect<10) {
+            pwm1 = 1000;
+            pwm2 = 1000;
+            pwm3 = 1000;
+            pwm4 = 1000;
+            pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
+            arduino.send(pwms.getBytes());
+//            Arrays.sort(allPWM);
+//            pwm1 = allPWM[allPWM.length - 1];
+//            pwm2 = allPWM[allPWM.length - 1];
+//            pwm3 = allPWM[allPWM.length - 1];
+//            pwm4 = allPWM[allPWM.length - 1];
+            wifiDirect++;
+        }
+        else if (wifiDirect>9)
+        {
+            wifiDirect = 0;
+        }
+//        else if (wifiDirect == 4) {
+//            pwm1 = pwm1 - 30;
+//            if (pwm1 < 1000) {
+//                pwm1 = 1000;
+//            }
+//            pwm2 = pwm2 - 30;
+//            if (pwm2 < 1000) {
+//                pwm2 = 1000;
+//            }
+//            pwm3 = pwm3 - 30;
+//            if (pwm3 < 1000) {
+//                pwm3 = 1000;
+//            }
+//            pwm4 = pwm4 - 30;
+//            if (pwm4 < 1000) {
+//                pwm4 = 1000;
+//            }
+//            pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);
+//            arduino.send(pwms.getBytes());
+//            if(pwm1 == 1000)
+//            {
+//                wifiDirect = 0;
+//            }
+//        }
         // "mOrientationAngles" now has up-to-date information.
     }
 
-    private int[] PWM(float time,float pitch,float roll,float yaw)
+    private int[] PWM(float time,float pitch,float roll,float yaw,float alt)
     {
-        float p_kp = Float.parseFloat(pitch_kp.getText().toString());
-        float p_ki = Float.parseFloat(pitch_ki.getText().toString());
-        float p_kd = Float.parseFloat(pitch_kd.getText().toString());
-        float r_kp = Float.parseFloat(roll_kp.getText().toString());
-        float r_ki = Float.parseFloat(roll_ki.getText().toString());
-        float r_kd = Float.parseFloat(roll_kd.getText().toString());
-        float y_kp = Float.parseFloat(yaw_kp.getText().toString());
-        float y_ki = Float.parseFloat(yaw_ki.getText().toString());
-        float y_kd = Float.parseFloat(yaw_kd.getText().toString());
-        float a_kp = Float.parseFloat(alt_kp.getText().toString());
-        float a_ki = Float.parseFloat(alt_ki.getText().toString());
-        float a_kd = Float.parseFloat(alt_kd.getText().toString());
-        float thrust = Float.parseFloat(throttle.getText().toString());
+        float p_kp = (float) 3.25,p_ki =(float) 0.068,p_kd =(float) 1.92;
+        float r_kp = (float) 3.25,r_ki =(float) 0.068,r_kd =(float) 1.92;
+        float y_kp = (float) 3.25,y_ki =(float) 0.068,y_kd =(float) 1.92;
+        float a_kp = (float) 10.80,a_ki =(float) 0.048,a_kd =(float) 2.5;
+        float thrust = 1100;
+        try {
+            p_kp = Float.parseFloat(pitch_kp.getText().toString());
+            p_ki = Float.parseFloat(pitch_ki.getText().toString());
+            p_kd = Float.parseFloat(pitch_kd.getText().toString());
 
-        float desired_angle_pitch = 0;
+            r_kp = Float.parseFloat(roll_kp.getText().toString());
+            r_ki = Float.parseFloat(roll_ki.getText().toString());
+            r_kd = Float.parseFloat(roll_kd.getText().toString());
 
-        float pitch_pid_i = 0,roll_pid_i = 0,yaw_pid_i = 0,alt_pid_i = 0;
+            y_kp = Float.parseFloat(yaw_kp.getText().toString());
+            y_ki = Float.parseFloat(yaw_ki.getText().toString());
+            y_kd = Float.parseFloat(yaw_kd.getText().toString());
+
+            a_kp = Float.parseFloat(alt_kp.getText().toString());
+            a_ki = Float.parseFloat(alt_ki.getText().toString());
+            a_kd = Float.parseFloat(alt_kd.getText().toString());
+
+            thrust = Float.parseFloat(throttle.getText().toString());
+        }
+        catch (Exception e) {
+        }
+
+        float pitch_pid_i = 0, roll_pid_i = 0, yaw_pid_i = 0, alt_pid_i = 0;
         float timePrev = time;
         float time1 = Calendar.getInstance().getTimeInMillis();
 
-        elapsedTime = (time1 - timePrev)/1000000000;
-        elapsedTime = elapsedTime/10000;
-
-
+        elapsedTime = (time1 - timePrev) / 1000000000;
+        elapsedTime = elapsedTime / 10000;
 
         //altitude error
-        float alt_error = target_altitude - altitude;
+        //float alt_error = target_altitude - alt;
+        float alt_error = 0;
 
         //pitch error (depend on the altitude and the yawning but default the desired angle = 0)
         float pitch_error = 0;
+        float desired_angle_pitch = 0;
 
         //roll error (desidred_angle = 0)
-        float roll_error = roll;
+        //float roll_error = roll;
+        float roll_error = 0;
 
         //where to yawn error
         float yaw_error = 0;
-        //float roll_error = 0;
 
         //Commands
         boolean alt_ok = false,yaw_ok = false;
-        if(alt_error<.3&&alt_error>-.3)
-        {
-            alt_error = 0;
-            alt_ok = true;
-        }
-        else
-        {
-            alt_ok = false;
-        }
+//        if(roll_error<5&&roll_error>-5)
+//        {
+//            roll_error = 0;
+//        }
+//        if(alt_error<.3&&alt_error>-.3)
+//        {
+//            alt_error = 0;
+//            alt_ok = true;
+//        }
+//        else
+//        {
+//            alt_ok = false;
+//        }
         if(/*alt_ok*/true)
         {
             yaw_error = yaw - whereToYawn;
             if(yaw_error<10 && yaw_error>-10)
             {
-                Log.d("wew","yawn error = 0");
                 yaw_error = 0;
                 yaw_ok = true;
             }
@@ -401,24 +488,20 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                 yaw_ok = false;
             }
         }
-        if(yaw_ok /*&& alt_ok*/)
-        {
-            desired_angle_pitch = 25;
-        }
-        else if(!yaw_ok)
-        {
-            desired_angle_pitch = 0;
-        }
-
-        if(roll_error<5&&roll_error>-5)
-        {
-            roll_error = 0;
-        }
-        pitch_error = pitch - desired_angle_pitch;
-        if(pitch_error<5&&pitch_error>-5)
-        {
-            pitch_error = 0;
-        }
+//        if(yaw_ok /*&& alt_ok*/)
+//        {
+//            desired_angle_pitch = 25;
+//        }
+//        else if(!yaw_ok)
+//        {
+//            desired_angle_pitch = 0;
+//        }
+//        pitch_error = pitch - desired_angle_pitch;
+//        //pitch_error = 0;
+//        if(pitch_error<5&&pitch_error>-5)
+//        {
+//            pitch_error = 0;
+//        }
         //End Command
 
         //PID_PROPRTIONAL
@@ -473,21 +556,13 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             roll_PID = 1000;
         }
-        if(yaw_PID < -1000)
+        if(yaw_PID < -500)
         {
-            yaw_PID = -1000;
+            yaw_PID = -500;
         }
-        else if(yaw_PID > 1000)
+        else if(yaw_PID > 500)
         {
-            yaw_PID = 1000;
-        }
-        if(yaw_PID < -1000)
-        {
-            yaw_PID = -1000;
-        }
-        else if(yaw_PID > 1000)
-        {
-            yaw_PID = 1000;
+            yaw_PID = 500;
         }
         if(alt_PID < -1000)
         {
@@ -497,10 +572,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             alt_PID = 1000;
         }
-        float pwm1 = thrust + pitch_PID - roll_PID - yaw_PID + alt_PID;
-        float pwm2 = thrust - pitch_PID - roll_PID + yaw_PID + alt_PID;
-        float pwm3 = thrust - pitch_PID + roll_PID - yaw_PID + alt_PID;
-        float pwm4 = thrust + pitch_PID + roll_PID + yaw_PID + alt_PID;
+        float pwm1 = thrust + pitch_PID - roll_PID + yaw_PID + alt_PID;
+        float pwm2 = thrust - pitch_PID - roll_PID - yaw_PID + alt_PID;
+        float pwm3 = thrust - pitch_PID + roll_PID + yaw_PID + alt_PID;
+        float pwm4 = thrust + pitch_PID + roll_PID - yaw_PID + alt_PID;
         if(pwm1 < 1000)
         {
             pwm1 = 1000;
@@ -517,9 +592,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             pwm2 = 2000;
         }
-        if(pwm3 < 1050)
+        if(pwm3 < 1000)
         {
-            pwm3 = 1050;
+            pwm3 = 1000;
         }
         if(pwm3 > 2000)
         {
@@ -533,9 +608,10 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         {
             pwm4 = 2000;
         }
-        pwm1 = (float) map(pwm1,1000,2000,1000,1987);
-        pwm2 = (float) map(pwm2,1000,2000,1000,1977);
-        pwm3 = (float) map(pwm3,1000,2000,1000,1994);
+        pwm1 = (float) map(pwm1,1000,2000,1040,1987);
+        pwm2 = (float) map(pwm2,1000,2000,1060,1977);
+        pwm3 = (float) map(pwm3,1000,2000,1040,1994);
+        pwm4 = (float) map(pwm4,1000,2000,1040,2000);
         yaw_previous_error = yaw_error;
         pitch_previous_error = pitch_error;
         roll_previous_error = roll_error;
@@ -566,9 +642,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     @Override
     public void onArduinoMessage(byte[] bytes)
     {
-        altitude= Float.parseFloat(new String(bytes));
-       try {
-            display("Alt:"+new String(bytes,"UTF-8"));
+        try {
+            altitude = Float.parseFloat(new String(bytes,"UTF-8"));
+            display("Alt:"+altitude);
 
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -597,29 +673,27 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     }
 
     public void Clicked(View view) {
-        clicked = !clicked;
-        target_altitude = 1;
-        receivedWaypoints.add(new LatLong(10.294612, 123.880889,false));
-        receivedWaypoints.add(new LatLong(10.294321, 123.880438,false));
-        receivedWaypoints.add(new LatLong(10.294677,123.880500,false));
-        directionPoint.add(new LatLng(latitude, longitude));
-
-        IconFactory iconFactory = IconFactory.getInstance(this);
-        Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
-
-        for (int index = 0; index < receivedWaypoints.size(); index++) {
-            marker.add(index, new MarkerOptions().title(index + "")
-                    .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
-                    .setIcon(icon));
-            mapboxMap.addMarker(marker.get(index));
-
-            directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
-        }
-
-        directionPoint.add(new LatLng(latitude, longitude));
-
-        lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
-        lineManager.create(lineOptions);
+//        clicked = !clicked;
+//        target_altitude = 1;
+//        receivedWaypoints.add(new LatLong(10.294612, 123.880889,false));
+//        directionPoint.add(new LatLng(latitude, longitude));
+//
+//        IconFactory iconFactory = IconFactory.getInstance(this);
+//        Icon icon = iconFactory.fromResource(R.drawable.uncheck_marker);
+//
+//        for (int index = 0; index < receivedWaypoints.size(); index++) {
+//            marker.add(index, new MarkerOptions().title(index + "")
+//                    .position(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()))
+//                    .setIcon(icon));
+//            mapboxMap.addMarker(marker.get(index));
+//
+//            directionPoint.add(new LatLng(receivedWaypoints.get(index).getLatitude(), receivedWaypoints.get(index).getLongitude()));
+//        }
+//
+//        directionPoint.add(new LatLng(latitude, longitude));
+//
+//        lineOptions.withLatLngs(directionPoint).withLineColor("#FFFA8D").withLineWidth(3.0f);
+//        lineManager.create(lineOptions);
     }
 
     private class dronepage_on_flightLocationCallback
@@ -675,7 +749,6 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
          */
         @Override
         public void onFailure(@NonNull Exception exception) {
-            Log.d("LocationChangeActivity", exception.getLocalizedMessage());
             dronepage_on_flight activity = activityWeakReference.get();
             if (activity != null) {
                 Toast.makeText(activity, exception.getLocalizedMessage(),
@@ -705,10 +778,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         arduino.setBaudRate(9600);
 
         elapsedTime = timePrev = 0;
-        yawn = pitch = roll = 0;
-        or1 = or2 = or3 = 0;
-        count = 0;
-        limit = 3;
+        yawn = pitch = roll = alt = 0;
 
         //PID
         //pitch_pid_d = pitch_pid_i = pitch_pid_d = roll_pid_p =roll_pid_i = roll_pid_d = 0;
@@ -736,6 +806,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
         tv5 = (TextView) findViewById(R.id.TV5);
         tv6 = (TextView) findViewById(R.id.TV6);
         tv7 = (TextView) findViewById(R.id.TV7);
+        tv8 = (TextView) findViewById(R.id.TV8);
         tv.setText("ALTITUDE = NULL");
 
         //EditText Instantiate
@@ -781,25 +852,23 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             public boolean handleMessage(Message msg) {
                 if (msg.what == 1) {
                     byte[] readBuff = (byte[]) msg.obj;
-                    String temp = new String(readBuff, 0, msg.arg1);
-                    receivedString = temp;
+                    String receiveData = new String(readBuff, 0, msg.arg1);
+                    receivedString = receiveData;
                     receive.setText(receivedString);
-                    if(wifiDirect == 0 && temp != null) {
+                    if(wifiDirect == 0 && receiveData != null) {
                         wifiDirect = 1;
                     }
-                    else if(wifiDirect == 2 && receivedString == "stop")
+                    else if(wifiDirect == 2 && receivedString.equals("stop"))
                     {
                         wifiDirect = 3;
                         receive.setText(receivedString);
-                        pwms = "1000100010001000";
-                        pwm1 = 1000;
-                        pwm2 = 1000;
-                        pwm3 = 1000;
-                        pwm4 = 1000;
-                        arduino.send(pwms.getBytes());
-                        wifiDirect = 0;
+                        receivedWaypoints.clear();
+                        directionPoint.clear();
+                        lineManager.deleteAll();
+                        lineManager.onDestroy();
+                        mapboxMap.clear();
                     }
-                    temp = null;
+                    receiveData = null;
                 }
                 return true;
             }
@@ -988,7 +1057,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     @Override
                     public void onFailure(int reason) {
                     }
+
                 });
+                return true;
             case R.id.action_beADeveloper:
                 if(!developerOptions)
                 {
@@ -1058,14 +1129,12 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
             InetAddress inetAddress = info.groupOwnerAddress;
             if (info.groupFormed && info.isGroupOwner) {
                 //constate.setText("Host");
-                Log.d("Reached", " Here 1");
                 serverSideThread = new Server_Side_Thread();
                 serverSideThread.start();
                 //Intent intent = new Intent(MainActivity.this, ChatActivity.class);
                 //startActivity(intent);
             } else if (info.groupFormed) {
                 //constate.setText("Client");
-                Log.d("Reached", " Here 2");
                 clientThread = new Client_Thread(inetAddress);
                 clientThread.start();
                 //Intent intent = new Intent(MainActivity.this, ChatActivity.class);

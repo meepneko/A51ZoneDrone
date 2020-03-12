@@ -6,18 +6,14 @@
     </shared>
   </component>
   <component name="AndroidLogFilters">
-    <option name="TOOL_WINDOW_CUSTOM_FILTER" value="wew" />
+    <option name="TOOL_WINDOW_CUSTOM_FILTER" value="Tagged" />
     <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="No Filters" />
-  </component>
-  <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java" line="579" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b0c2a076-3c0d-488e-86f2-d0df95efcff4" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/res/drawable/mbutton_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/Drone/dronepage_on_flight.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/Drone/dronepage_on_flight.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -38,45 +34,34 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/LatLong.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-887">
-              <caret line="271" column="41" selection-start-line="271" selection-start-column="41" selection-end-line="271" selection-end-column="41" />
-              <folding>
-                <element signature="e#13308#19310#0" />
-                <element signature="e#19827#20113#0" />
-                <element signature="e#20119#20220#0" />
-                <element signature="e#22068#22217#0" />
-                <element signature="e#22227#23855#0" />
-                <element signature="e#23865#24473#0" />
-                <element signature="e#24485#29542#0" />
-                <element signature="e#29548#30516#0" />
-                <element signature="e#30522#30807#0" />
-                <element signature="e#30813#32296#0" />
-                <element signature="e#32302#32944#0" />
-                <element signature="e#32950#33182#0" />
-                <element signature="e#33188#33379#0" />
-                <element signature="e#33385#33758#0" />
-                <element signature="e#34390#38318#0" />
-                <element signature="e#40535#41959#0" />
-                <element signature="e#41965#42234#0" />
-                <element signature="e#42240#42380#0" />
-                <element signature="e#42386#42481#0" />
-                <element signature="e#42487#42594#0" />
-                <element signature="e#42600#42937#0" />
-                <element signature="e#42943#43108#0" />
-              </folding>
+            <state relative-caret-position="306">
+              <caret line="26" column="24" selection-start-line="26" selection-start-column="24" selection-end-line="26" selection-end-column="24" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_main.xml">
+        <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml">
           <provider selected="true" editor-type-id="android-designer2" />
           <provider editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="9" column="4" selection-start-line="9" selection-start-column="4" selection-end-line="9" selection-end-column="4" />
+            <state relative-caret-position="1870">
+              <caret line="110" column="30" selection-start-line="110" selection-start-column="30" selection-end-line="110" selection-end-column="30" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/Drone/dronepage_on_flight.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-89">
+              <caret line="366" column="50" lean-forward="true" selection-start-line="366" selection-start-column="50" selection-end-line="366" selection-end-column="50" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <marker date="1584007736114" expanded="true" signature="18966:19155" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -92,36 +77,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>onArduino</find>
-      <find>onArdui</find>
-      <find>click</find>
-      <find>update</find>
-      <find>updat</find>
-      <find>Update</find>
-      <find>onSe</find>
-      <find>getCA</find>
-      <find>Bear</find>
-      <find>onClic</find>
-      <find>listView</find>
-      <find>onCreate</find>
-      <find>makeText</find>
-      <find>Log.d</find>
-      <find>onSen</find>
-      <find>onCrea</find>
-      <find>thro</find>
-      <find>yaw</find>
-      <find>onSensor</find>
-      <find>aveoR1</find>
-      <find>aveoR3</find>
       <find>find</find>
       <find>handler</find>
       <find>Click</find>
       <find>desired_angle</find>
-      <find>onSens</find>
       <find>= Float.parseFloat(roll_ki.getText().toString());</find>
       <find>cL</find>
-      <find>menu</find>
       <find>pwm</find>
+      <find>onSens</find>
+      <find>menu</find>
+      <find>upda</find>
+      <find>wif</find>
+      <find>wifiDire</find>
+      <find>allpw</find>
+      <find>wifiDirect</find>
+      <find>map</find>
+      <find>onCreat</find>
+      <find>onSe</find>
+      <find>onUpdate</find>
+      <find>Orientation</find>
+      <find>arduino.send</find>
+      <find>altitude</find>
+      <find>arduino</find>
+      <find>Log.d</find>
+      <find>clicked</find>
+      <find>1000</find>
+      <find>1100</find>
+      <find>arduino.send(pwms.getBytes());</find>
+      <find>pwms = Integer.toString(pwm1) + Integer.toString(pwm2) + Integer.toString(pwm3) + Integer.toString(pwm4);</find>
+      <find>pwm1</find>
+      <find>alt</find>
     </findStrings>
     <replaceStrings>
       <replace>yawn</replace>
@@ -142,16 +127,17 @@
         <option value="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/MainActivity.java" />
         <option value="$PROJECT_DIR$/src/main/res/values/strings.xml" />
         <option value="$PROJECT_DIR$/src/main/res/menu/menu_list.xml" />
-        <option value="$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml" />
         <option value="$PROJECT_DIR$/src/main/res/drawable/mbutton_.xml" />
         <option value="$PROJECT_DIR$/src/main/res/layout/activity_main.xml" />
         <option value="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java" />
+        <option value="$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml" />
+        <option value="$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/Drone/dronepage_on_flight.java" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
-    <option name="x" value="78" />
-    <option name="y" value="77" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="677" />
+    <option name="y" value="1" />
     <option name="width" value="697" />
     <option name="height" value="735" />
   </component>
@@ -160,42 +146,11 @@
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="AndroidView">
-        <subPane>
-          <expand>
-            <path>
-              <item name="A51ZoneDrone_App" type="1abcf292:AndroidViewProjectNode" />
-              <item name="app" type="feadf853:AndroidModuleNode" />
-            </path>
-            <path>
-              <item name="A51ZoneDrone_App" type="1abcf292:AndroidViewProjectNode" />
-              <item name="app" type="feadf853:AndroidModuleNode" />
-              <item name="manifests" type="f94875db:AndroidManifestsGroupNode" />
-            </path>
-            <path>
-              <item name="A51ZoneDrone_App" type="1abcf292:AndroidViewProjectNode" />
-              <item name="app" type="feadf853:AndroidModuleNode" />
-              <item name="java" type="edd41e36:AndroidSourceTypeNode" />
-            </path>
-            <path>
-              <item name="A51ZoneDrone_App" type="1abcf292:AndroidViewProjectNode" />
-              <item name="app" type="feadf853:AndroidModuleNode" />
-              <item name="java" type="edd41e36:AndroidSourceTypeNode" />
-              <item name="a51zonedrone_app" type="cbb59c9e:AndroidPsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-      <pane id="ProjectPane" />
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="DeviceAndSnapshotComboBoxAction.selectedDevice" value="RBDBB18418500055" />
-    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-03-06T07:23:13.451Z" />
+    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-03-10T11:56:25.421Z" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="android.sdk.path" value="$USER_HOME$/AppData/Local/Android/Sdk" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -288,12 +243,21 @@
     </task>
     <servers />
   </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Captures" order="0" side_tool="true" weight="0.25" />
-      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.22239032" />
+      <window_info content_ui="combo" id="Project" order="1" weight="0.46153846" />
       <window_info id="Structure" order="2" side_tool="true" />
       <window_info id="Favorites" order="3" side_tool="true" />
       <window_info id="Build Variants" order="4" side_tool="true" />
@@ -302,14 +266,15 @@
       <window_info id="Resources Explorer" order="7" weight="0.32980332" />
       <window_info id="Capture Tool" order="8" />
       <window_info anchor="bottom" id="Version Control" order="0" />
-      <window_info anchor="bottom" id="Logcat" order="1" weight="0.2831424" />
-      <window_info anchor="bottom" id="TODO" order="2" />
+      <window_info anchor="bottom" id="Logcat" order="1" weight="0.3747954" />
+      <window_info anchor="bottom" id="TODO" order="2" weight="0.3289689" />
       <window_info anchor="bottom" id="Terminal" order="3" />
       <window_info anchor="bottom" id="Event Log" order="4" side_tool="true" />
-      <window_info anchor="bottom" id="Build" order="5" visible="true" weight="0.2831424" />
+      <window_info active="true" anchor="bottom" id="Build" order="5" visible="true" weight="0.20949264" />
       <window_info anchor="bottom" id="Android Profiler" order="6" />
-      <window_info anchor="bottom" id="Run" order="7" weight="0.18330605" />
+      <window_info anchor="bottom" id="Run" order="7" weight="0.502455" />
       <window_info anchor="bottom" id="Debug" order="8" weight="0.3289689" />
+      <window_info anchor="bottom" id="Find" order="9" weight="0.3289689" />
       <window_info anchor="right" id="Device File Explorer" order="0" side_tool="true" />
       <window_info anchor="right" id="Capture Analysis" order="1" />
       <window_info anchor="right" id="Gradle" order="2" />
@@ -385,24 +350,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.appcompat/appcompat/1.0.2/e38e7c85994112b70d4548176128c72b8477c110/appcompat-1.0.2-sources.jar!/androidx/appcompat/app/AppCompatActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="519" selection-start-line="519" selection-end-line="519" />
-          <folding>
-            <element signature="e#6858#6859#0" expanded="true" />
-            <element signature="e#6911#6912#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/me.aflak.libraries/arduino/1.4.4/4fb4c63ab25be1a03720a3a20a83c2f4ff2f1dc1/arduino-1.4.4-sources.jar!/me/aflak/arduino/Arduino.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="129">
-          <caret line="229" column="33" selection-start-line="229" selection-start-column="33" selection-end-line="229" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_compatibility.xml">
       <provider selected="true" editor-type-id="android-designer2" />
       <provider editor-type-id="text-editor">
@@ -411,13 +358,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_compatibility.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="28" column="13" selection-start-line="28" selection-start-column="13" selection-end-line="28" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_compatibility.java" />
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mapbox.mapboxsdk/mapbox-sdk-geojson/4.9.0/2a995394dfd2fb5199e302d7e96e51af7dcee115/mapbox-sdk-geojson-4.9.0-sources.jar!/com/mapbox/geojson/Point.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="158">
@@ -439,32 +380,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/controllerpage_waypoint.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8">
-          <caret line="634" column="24" selection-start-line="634" selection-start-column="24" selection-end-line="634" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/controllerpage_waypoint.java" />
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mapbox.mapboxsdk/mapbox-android-sdk/8.6.2/446e3820bc4b23eb772a2e4997654702ae959c79/mapbox-android-sdk-8.6.2-sources.jar!/com/mapbox/mapboxsdk/maps/MapView.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="158">
           <caret line="274" column="20" selection-start-line="274" selection-start-column="20" selection-end-line="274" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/LatLong.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="99">
-          <caret line="26" column="24" selection-start-line="26" selection-start-column="24" selection-end-line="26" selection-end-column="24" />
-          <folding>
-            <element signature="e#838#839#0" expanded="true" />
-            <element signature="e#891#892#0" expanded="true" />
-            <element signature="e#1098#1099#0" expanded="true" />
-            <element signature="e#1127#1128#0" expanded="true" />
-            <element signature="e#1169#1170#0" expanded="true" />
-            <element signature="e#1199#1200#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -500,13 +420,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/MainActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="19" lean-forward="true" selection-start-line="19" selection-end-line="19" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Android/Sdk/sources/android-29/android/widget/ScrollView.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="137">
@@ -521,14 +434,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml">
-      <provider editor-type-id="android-designer2" />
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-230">
-          <caret line="106" column="4" selection-start-line="106" selection-start-column="4" selection-end-line="106" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/res/drawable/mbutton_.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="51">
@@ -540,6 +445,32 @@
     <entry file="file://$PROJECT_DIR$/src/main/res/drawable/drone_logo.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java" />
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/MainActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="22">
+          <caret line="19" lean-forward="true" selection-start-line="19" selection-end-line="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.appcompat/appcompat/1.0.2/e38e7c85994112b70d4548176128c72b8477c110/appcompat-1.0.2-sources.jar!/androidx/appcompat/app/AppCompatActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="137">
+          <caret line="69" column="19" selection-start-line="68" selection-start-column="4" selection-end-line="85" selection-end-column="5" />
+          <folding>
+            <element signature="e#6858#6859#0" expanded="true" />
+            <element signature="e#6911#6912#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/me.aflak.libraries/arduino/1.4.4/4fb4c63ab25be1a03720a3a20a83c2f4ff2f1dc1/arduino-1.4.4-sources.jar!/me/aflak/arduino/Arduino.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="174">
+          <caret line="96" column="16" selection-start-line="96" selection-start-column="16" selection-end-line="96" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_main.xml">
       <provider selected="true" editor-type-id="android-designer2" />
       <provider editor-type-id="text-editor">
@@ -548,33 +479,35 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/dronepage_on_flight.java">
+    <entry file="file://$USER_HOME$/AppData/Local/Android/Sdk/sources/android-29/android/util/Log.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-887">
-          <caret line="271" column="41" selection-start-line="271" selection-start-column="41" selection-end-line="271" selection-end-column="41" />
+        <state relative-caret-position="90">
+          <caret line="25" column="19" selection-start-line="25" selection-start-column="19" selection-end-line="25" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/LatLong.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="26" column="24" selection-start-line="26" selection-start-column="24" selection-end-line="26" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/res/layout/activity_dronepage_on_flight.xml">
+      <provider selected="true" editor-type-id="android-designer2" />
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="1870">
+          <caret line="110" column="30" selection-start-line="110" selection-start-column="30" selection-end-line="110" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/example/a51zonedrone_app/Drone/dronepage_on_flight.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-89">
+          <caret line="366" column="50" lean-forward="true" selection-start-line="366" selection-start-column="50" selection-end-line="366" selection-end-column="50" />
           <folding>
-            <element signature="e#13308#19310#0" />
-            <element signature="e#19827#20113#0" />
-            <element signature="e#20119#20220#0" />
-            <element signature="e#22068#22217#0" />
-            <element signature="e#22227#23855#0" />
-            <element signature="e#23865#24473#0" />
-            <element signature="e#24485#29542#0" />
-            <element signature="e#29548#30516#0" />
-            <element signature="e#30522#30807#0" />
-            <element signature="e#30813#32296#0" />
-            <element signature="e#32302#32944#0" />
-            <element signature="e#32950#33182#0" />
-            <element signature="e#33188#33379#0" />
-            <element signature="e#33385#33758#0" />
-            <element signature="e#34390#38318#0" />
-            <element signature="e#40535#41959#0" />
-            <element signature="e#41965#42234#0" />
-            <element signature="e#42240#42380#0" />
-            <element signature="e#42386#42481#0" />
-            <element signature="e#42487#42594#0" />
-            <element signature="e#42600#42937#0" />
-            <element signature="e#42943#43108#0" />
+            <element signature="imports" expanded="true" />
+            <marker date="1584007736114" expanded="true" signature="18966:19155" ph="..." />
           </folding>
         </state>
       </provider>

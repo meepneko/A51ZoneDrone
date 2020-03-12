@@ -104,6 +104,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/TV6" />
 
+    <TextView
+        android:id="@+id/TV8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Altitude"
+        android:textColor="@color/yellow"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/TV7" />
+
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="301dp"
@@ -273,7 +283,7 @@
                 android:layout_height="35dp"
                 android:ems="10"
                 android:inputType="textPersonName"
-                android:text="1400"
+                android:text="1100"
                 android:textColor="@color/yellow"
                 android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
