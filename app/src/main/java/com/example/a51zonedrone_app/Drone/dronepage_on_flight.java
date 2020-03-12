@@ -41,10 +41,12 @@ import android.widget.Toast;
 import com.example.a51zonedrone_app.Controller.controllerpage_waypoint;
 import com.example.a51zonedrone_app.LatLong;
 import com.example.a51zonedrone_app.R;
+//Wifi Direct
 import com.example.a51zonedrone_app.WiFiDirect.Client_Thread;
 import com.example.a51zonedrone_app.WiFiDirect.SendReceiveThread;
 import com.example.a51zonedrone_app.WiFiDirect.Server_Side_Thread;
 import com.example.a51zonedrone_app.WiFiDirect.WifiDirectBroadcastReceiver;
+//Wifi Direct
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -286,7 +288,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
 
             if (distanceBetween < SameThreshold) {
                 mapboxMap.removeMarker(marker.get(i).getMarker());
-                //TODO: Himoag array ang markers unya usaba ni nga part sa code
+
                 receivedWaypoints.get(i).setPass(true);
                 IconFactory iconFactory = IconFactory.getInstance(dronepage_on_flight.this);
                 Icon icon = iconFactory.fromResource(R.drawable.check_marker);
@@ -726,8 +728,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                         return;
                     }
                 } catch(Exception e){
-                    Toast.makeText(getApplicationContext(), /*"Please make sure you're connected to the internet and your location is on."*/
-                            e.getMessage() + "", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),
+                            "Please make sure you're connected to the internet and your location is on."
+                                    + "", Toast.LENGTH_LONG).show();
                 }
 
                 // Create a Toast which displays the new location's coordinates
@@ -1014,14 +1017,14 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_list, menu);
+        inflater.inflate(R.menu.menu_list_drone, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_directEnable:
+            case R.id.drone_action_directEnable:
                 if(!wifiManager.isWifiEnabled()){
                     wifiManager.setWifiEnabled(true);
                 }
@@ -1029,7 +1032,7 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     wifiManager.setWifiEnabled(false);
                 }
                 return true;
-            case R.id.action_directDiscover:
+            case R.id.drone_action_directDiscover:
                 mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
                     @Override
                     //Discovery started successfully
@@ -1047,8 +1050,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
                             public void onItemClick(AdapterView<?> parent, View view, int i, long l) {
-                                wifiP2pDevice = deviceArray[i];
-                                makeConnection(wifiP2pDevice);
+                                Toast.makeText(getApplicationContext(),
+                                        "This feature is not available for drone mode.",
+                                        Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -1057,10 +1061,9 @@ public class dronepage_on_flight extends AppCompatActivity implements OnMapReady
                     @Override
                     public void onFailure(int reason) {
                     }
-
                 });
                 return true;
-            case R.id.action_beADeveloper:
+            case R.id.drone_action_beADeveloper:
                 if(!developerOptions)
                 {
                     sv.setVisibility(View.VISIBLE);

@@ -383,8 +383,6 @@ public class controllerpage_waypoint extends AppCompatActivity implements
 
                             markerOptions.position(latlng1);
                             mapboxMap.addMarker(markerOptions);
-                            mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius)).fillColor(Color.parseColor("#12121212")));
-
 
                             lineOptions.withLatLngs(directionPoint).withLineColor("#EE3B3B").withLineWidth(3.0f);
                             lineManager.create(lineOptions);
@@ -412,6 +410,11 @@ public class controllerpage_waypoint extends AppCompatActivity implements
     public void UpdateUI(double lat, double lon){
 
         LatLng latLng = new LatLng(lat, lon);
+        if(checker == false){
+            mapboxMap.addPolygon(poly.addAll(polygonCircleForCoordinate(new LatLng(latitude, longitude), radius))
+                    .fillColor(Color.parseColor("#12121212")));
+            checker = true;
+        }
       //  LatLng latLng = new LatLng(lt, lonn);
 
 //        if(checker == false){
@@ -675,6 +678,7 @@ public class controllerpage_waypoint extends AppCompatActivity implements
                     public void onFailure(int reason) {
                     }
                 });
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

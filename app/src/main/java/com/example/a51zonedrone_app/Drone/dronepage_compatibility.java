@@ -34,7 +34,6 @@ public class dronepage_compatibility extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_compatibility);
-        onConnect = findViewById(R.id.onConnect);
         imageView = findViewById(R.id.imgView);
 
         sensorManager =(SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -87,7 +86,7 @@ public class dronepage_compatibility extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkAC == true /*&& checkMA == true*/) {
+                if(checkAC == true && checkMA == true) {
                     Intent startIntent = new Intent(getApplicationContext(), dronepage_on_flight.class);
                     startActivity(startIntent);
                 }
